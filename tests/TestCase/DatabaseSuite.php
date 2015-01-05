@@ -15,6 +15,7 @@
 namespace Cake\Test\TestCase;
 
 use Cake\Datasource\ConnectionManager;
+use Cake\TestSuite\Fixture\FixtureManager;
 use Cake\TestSuite\TestPermutationDecorator;
 use Cake\TestSuite\TestSuite;
 use \PHPUnit_Framework_TestResult;
@@ -43,7 +44,7 @@ class DatabaseSuite extends TestSuite
 
     public function count()
     {
-        return parent::count() * 2;
+        return parent::count() * 4;
     }
 
     /**
@@ -60,6 +61,20 @@ class DatabaseSuite extends TestSuite
             },
             'No identifier quoting' => function () {
                 ConnectionManager::get('test')->driver()->autoQuoting(false);
+            },
+            'Identifier Quoting / Prefix' => function () {
+                foreach ($this->tests as $testsKey => $tests) {
+                    foreach ($tests->tests as $testCaseKey => $testCase) {
+                        if (property_exists($testCase, 'fixtureManager') && $testCase->fixtureManager instanceof FixtureManager) {
+                            $this->tests[$testsKey]->tests[$testCaseKey]->fixtureManager->resetFixture($testCase, ConnectionManager::get('test'));
+                        }
+                    }
+                }
+                $this->prefixTestConnection();
+                ConnectionManager::get('test')->driver()->autoQuoting(true);
+            },
+            'No identifier quoting / Prefix' => function () {
+                ConnectionManager::get('test')->driver()->autoQuoting(false);
             }
         ];
 
@@ -68,5 +83,23 @@ class DatabaseSuite extends TestSuite
             $result = parent::run($result, $filter, $groups, $excludeGroups, $processIsolation);
         }
         return $result;
+    }
+
+    /**
+     * This will drop the current Connection "test" configuration to
+     * rewrite it with a prefix "prefix_" added to run the test suite
+     * with a connection prefix
+     *
+     * @return void
+     */
+    public function prefixTestConnection() {
+        $connection = ConnectionManager::get('test');
+        $config = $connection->config();
+        $config['className'] = get_class($connection);
+        ConnectionManager::config('testNoPrefix', $config);
+
+        ConnectionManager::drop('test');
+        $config['prefix'] = 'prefix_';
+        ConnectionManager::config('test', $config);
     }
 }

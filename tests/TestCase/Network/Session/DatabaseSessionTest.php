@@ -23,6 +23,7 @@ use Cake\Network\Session\DatabaseSession;
 use Cake\ORM\Table;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
+use Cake\TestSuite\Traits\ConnectionPrefixTestTrait;
 
 /**
  * Database session test.
@@ -30,6 +31,8 @@ use Cake\TestSuite\TestCase;
  */
 class DatabaseSessionTest extends TestCase
 {
+
+    use ConnectionPrefixTestTrait;
 
     /**
      * fixtures
@@ -46,6 +49,7 @@ class DatabaseSessionTest extends TestCase
     public function setUp()
     {
         parent::setUp();
+        $this->setPrefix();
         Configure::write('App.namespace', 'TestApp');
         $this->storage = new DatabaseSession();
     }
@@ -76,7 +80,7 @@ class DatabaseSessionTest extends TestCase
         $this->assertInstanceOf('Cake\ORM\Table', $session);
         $this->assertEquals('Sessions', $session->alias());
         $this->assertEquals(ConnectionManager::get('test'), $session->connection());
-        $this->assertEquals('sessions', $session->table());
+        $this->assertEquals($this->applyConnectionPrefix('~sessions'), $session->table());
     }
 
     /**

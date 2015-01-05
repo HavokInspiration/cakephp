@@ -14,6 +14,7 @@
  */
 namespace Cake\Database\Schema;
 
+use Cake\Database\Connection;
 use Cake\Database\Schema\Table;
 
 /**
@@ -44,6 +45,7 @@ class SqlserverSchema extends BaseSchema
      */
     public function describeColumnSql($tableName, $config)
     {
+        $tableName = $this->getFullTableName($tableName, $config);
         $sql =
         "SELECT DISTINCT TABLE_SCHEMA AS [schema], COLUMN_NAME AS [name], DATA_TYPE AS [type],
 			IS_NULLABLE AS [null], COLUMN_DEFAULT AS [default],
@@ -166,6 +168,7 @@ class SqlserverSchema extends BaseSchema
      */
     public function describeIndexSql($tableName, $config)
     {
+        $tableName = $this->getFullTableName($tableName, $config);
         $sql = "
 			SELECT
 				I.[name] AS [index_name],
@@ -229,6 +232,7 @@ class SqlserverSchema extends BaseSchema
      */
     public function describeForeignKeySql($tableName, $config)
     {
+        $tableName = $this->getFullTableName($tableName, $config);
         $sql = "
 			SELECT FK.[name] AS [foreign_key_name], FK.[delete_referential_action_desc] AS [delete_type],
 				FK.[update_referential_action_desc] AS [update_type], C.name AS [column], RT.name AS [reference_table],
@@ -385,9 +389,10 @@ class SqlserverSchema extends BaseSchema
     /**
      * {@inheritDoc}
      */
-    public function constraintSql(Table $table, $name)
+    public function constraintSql(Table $table, $name, Connection $connection)
     {
         $data = $table->constraint($name);
+        $data['references'][0] = $this->getFullTableName($data['references'][0], $connection->config());
         $out = 'CONSTRAINT ' . $this->_driver->quoteIdentifier($name);
         if ($data['type'] === Table::CONSTRAINT_PRIMARY) {
             $out = 'PRIMARY KEY';

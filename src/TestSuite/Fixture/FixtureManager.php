@@ -68,6 +68,21 @@ class FixtureManager
         $this->_processed[get_class($test)] = true;
     }
 
+    public function resetFixture($test, Connection $db)
+    {
+        if (!empty($test->fixtures) && !empty($this->_processed[get_class($test)])) {
+            unset($this->_processed[get_class($test)]);
+
+            foreach ($test->fixtures as $fixture) {
+                if (is_string($fixture) && isset($this->_loaded[$fixture])) {
+                    unset($this->_loaded[$fixture]);
+                } elseif (is_object($fixture)) {
+                    debug($fixture);
+                }
+            }
+        }
+    }
+
     /**
      * Get the loaded fixtures.
      *
@@ -198,6 +213,10 @@ class FixtureManager
         }
 
         $table = $fixture->table;
+        $dbPrefix = $db->getPrefix();
+        if (is_string($dbPrefix) && $dbPrefix !== '') {
+            $table = $dbPrefix . $table;
+        }
         $exists = in_array($table, $sources);
 
         if ($drop && $exists) {

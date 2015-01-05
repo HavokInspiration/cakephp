@@ -14,6 +14,7 @@
  */
 namespace Cake\Database\Schema;
 
+use Cake\Database\Connection;
 use Cake\Database\Driver;
 use Cake\Database\Schema\Table;
 
@@ -217,9 +218,10 @@ abstract class BaseSchema
      *
      * @param \Cake\Database\Schema\Table $table The table instance the column is in.
      * @param string $name The name of the column.
+     * @param Connection $connection
      * @return string SQL fragment.
      */
-    abstract public function constraintSql(Table $table, $name);
+    abstract public function constraintSql(Table $table, $name, Connection $connection);
 
     /**
      * Generate the SQL fragment for a single index in a table.
@@ -237,4 +239,42 @@ abstract class BaseSchema
      * @return array SQL statements to truncate a table.
      */
     abstract public function truncateTableSql(Table $table);
+
+    /**
+     * Retrieves the prefix from the current connection $config
+     *
+     * @param array $config Configuration array for the current Connection
+     * @return string The prefix for the current connection
+     */
+    public function getConnectionPrefix($config)
+    {
+        $prefix = '';
+        if (isset($config['prefix']) && is_string($config['prefix'])) {
+            $prefix = $config['prefix'];
+        }
+        return $prefix;
+    }
+
+    /**
+     * Resolves the full table name for the table name $tableName
+     *
+     * @param string $tableName Table name
+     * @param array $config Configuration array for the current Connection
+     * @param bool $quoted Whether the table name should be quoted
+     * @return string The full table name
+     */
+    public function getFullTableName($tableName, $config, $quoted = true)
+    {
+        $prefix = $this->getConnectionPrefix($config);
+        if (is_string($tableName)) {
+            if ($prefix !== '' && (strpos($tableName, $prefix) !== 0 || $tableName === $prefix)) {
+                $tableName = $prefix . $tableName;
+            }
+            if ($quoted === true) {
+                $tableName = $this->_driver->quoteIdentifier($tableName);
+            }
+            return $tableName;
+        }
+        return $tableName;
+    }
 }

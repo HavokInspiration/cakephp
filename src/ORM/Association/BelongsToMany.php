@@ -155,7 +155,7 @@ class BelongsToMany extends Association
                 $table = $this->_through;
             } else {
                 $tableName = $this->_junctionTableName();
-                $tableAlias = Inflector::camelize($tableName);
+                $tableAlias = Inflector::camelize($this->rawTableName($tableName));
 
                 $config = [];
                 if (!TableRegistry::exists($tableAlias)) {
@@ -981,9 +981,10 @@ class BelongsToMany extends Association
                 sort($aliases);
                 $this->_junctionTableName = implode('_', $aliases);
             }
+            $this->_junctionTableName = $this->source()->prefixTableName($this->_junctionTableName);
             return $this->_junctionTableName;
         }
-        return $this->_junctionTableName = $name;
+        return $this->_junctionTableName = $this->source()->prefixTableName($name);
     }
 
     /**

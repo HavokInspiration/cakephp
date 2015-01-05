@@ -30,6 +30,7 @@ use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
+use Cake\TestSuite\Traits\ConnectionPrefixTestTrait;
 use Cake\Validation\Validator;
 
 /**
@@ -46,6 +47,8 @@ class UsersTable extends Table
  */
 class TableTest extends TestCase
 {
+
+    use ConnectionPrefixTestTrait;
 
     public $fixtures = [
         'core.users', 'core.categories', 'core.articles', 'core.authors',
@@ -64,6 +67,7 @@ class TableTest extends TestCase
     {
         parent::setUp();
         $this->connection = ConnectionManager::get('test');
+        $this->setPrefix();
         Configure::write('App.namespace', 'TestApp');
 
         $this->usersTypeMap = new TypeMap([
@@ -621,7 +625,7 @@ class TableTest extends TestCase
         $belongsToMany = $associations->get('tags');
         $this->assertInstanceOf('Cake\ORM\Association\BelongsToMany', $belongsToMany);
         $this->assertEquals('tags', $belongsToMany->name());
-        $this->assertSame('things_tags', $belongsToMany->junction()->table());
+        $this->assertSame($this->applyConnectionPrefix('~things_tags'), $belongsToMany->junction()->table());
     }
 
     /**
@@ -3318,7 +3322,7 @@ class TableTest extends TestCase
         $articles->addBehavior('Timestamp');
         $result = $articles->__debugInfo();
         $expected = [
-            'table' => 'articles',
+            'table' => $this->applyConnectionPrefix('~articles'),
             'alias' => 'articles',
             'entityClass' => 'TestApp\Model\Entity\Article',
             'associations' => ['authors', 'tags', 'articlestags'],

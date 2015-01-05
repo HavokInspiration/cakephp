@@ -20,12 +20,20 @@ use Cake\Database\Schema\SqliteSchema;
 use Cake\Database\Schema\Table;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
+use Cake\TestSuite\Traits\ConnectionPrefixTestTrait;
 
 /**
  * Test case for Sqlite Schema Dialect.
  */
 class SqliteSchemaTest extends TestCase
 {
+
+    use ConnectionPrefixTestTrait;
+
+    public function setUp() {
+        parent::setUp();
+        $this->setPrefix();
+    }
 
     /**
      * Helper method for skipping tests that need a real connection.
@@ -200,16 +208,20 @@ class SqliteSchemaTest extends TestCase
     {
         $this->_needsConnection();
 
+        $prefix = $this->_getConnectionPrefix($connection);
+
         $schema = new SchemaCollection($connection);
         $result = $schema->listTables();
-        if (in_array('schema_articles', $result) &&
-            in_array('schema_authors', $result)
+
+        if (
+            in_array($prefix . 'schema_articles', $result) &&
+            in_array($prefix . 'schema_authors', $result)
         ) {
             return;
         }
 
         $table = <<<SQL
-CREATE TABLE schema_authors (
+CREATE TABLE {$prefix}schema_authors (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 name VARCHAR(50),
 bio TEXT,
@@ -219,7 +231,7 @@ SQL;
         $connection->execute($table);
 
         $table = <<<SQL
-CREATE TABLE schema_articles (
+CREATE TABLE {$prefix}schema_articles (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 title VARCHAR(20) DEFAULT 'testing',
 body TEXT,
@@ -227,11 +239,11 @@ author_id INT(11) NOT NULL,
 published BOOLEAN DEFAULT 0,
 created DATETIME,
 CONSTRAINT "title_idx" UNIQUE ("title", "body")
-CONSTRAINT "author_idx" FOREIGN KEY ("author_id") REFERENCES "schema_authors" ("id") ON UPDATE CASCADE ON DELETE RESTRICT
+CONSTRAINT "author_idx" FOREIGN KEY ("author_id") REFERENCES "{$prefix}schema_authors" ("id") ON UPDATE CASCADE ON DELETE RESTRICT
 );
 SQL;
         $connection->execute($table);
-        $connection->execute('CREATE INDEX "created_idx" ON "schema_articles" ("created")');
+        $connection->execute($this->applyConnectionPrefix('CREATE INDEX "created_idx" ON "~schema_articles" ("created")'));
     }
 
     /**
@@ -248,8 +260,8 @@ SQL;
         $result = $schema->listTables();
 
         $this->assertInternalType('array', $result);
-        $this->assertContains('schema_articles', $result);
-        $this->assertContains('schema_authors', $result);
+        $this->assertContains($this->applyConnectionPrefix('~schema_articles'), $result);
+        $this->assertContains($this->applyConnectionPrefix('~schema_authors'), $result);
     }
 
     /**
@@ -336,6 +348,8 @@ SQL;
         $connection = ConnectionManager::get('test');
         $this->_createTables($connection);
 
+        $prefix = $this->_getConnectionPrefix($connection);
+
         $schema = new SchemaCollection($connection);
         $result = $schema->describe('schema_articles');
         $this->assertInstanceOf('Cake\Database\Schema\Table', $result);
@@ -345,7 +359,7 @@ SQL;
                 'columns' => ['id'],
                 'length' => []
             ],
-            'sqlite_autoindex_schema_articles_1' => [
+            'sqlite_autoindex_' . $prefix . 'schema_articles_1' => [
                 'type' => 'unique',
                 'columns' => ['title', 'body'],
                 'length' => []
@@ -353,7 +367,7 @@ SQL;
             'author_id_fk' => [
                 'type' => 'foreign',
                 'columns' => ['author_id'],
-                'references' => ['schema_authors', 'id'],
+                'references' => [$prefix . 'schema_authors', 'id'],
                 'length' => [],
                 'update' => 'cascade',
                 'delete' => 'restrict',
@@ -362,8 +376,8 @@ SQL;
         $this->assertCount(3, $result->constraints());
         $this->assertEquals($expected['primary'], $result->constraint('primary'));
         $this->assertEquals(
-            $expected['sqlite_autoindex_schema_articles_1'],
-            $result->constraint('sqlite_autoindex_schema_articles_1')
+            $expected['sqlite_autoindex_' . $prefix . 'schema_articles_1'],
+            $result->constraint('sqlite_autoindex_' . $prefix . 'schema_articles_1')
         );
         $this->assertEquals(
             $expected['author_id_fk'],
@@ -551,7 +565,7 @@ SQL;
         $result = $schema->columnSql($table, 'id');
         $this->assertEquals($result, '"id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT');
 
-        $result = $schema->constraintSql($table, 'primary');
+        $result = $schema->constraintSql($table, 'primary', ConnectionManager::get('test'));
         $this->assertEquals('', $result, 'Integer primary keys are special in sqlite.');
     }
 
@@ -577,7 +591,7 @@ SQL;
         $result = $schema->columnSql($table, 'id');
         $this->assertEquals($result, '"id" BIGINT NOT NULL');
 
-        $result = $schema->constraintSql($table, 'primary');
+        $result = $schema->constraintSql($table, 'primary', ConnectionManager::get('test'));
         $this->assertEquals('CONSTRAINT "primary" PRIMARY KEY ("id")', $result, 'Bigint primary keys are not special.');
     }
 
@@ -603,31 +617,31 @@ SQL;
                 'author_id_idx',
                 ['type' => 'foreign', 'columns' => ['author_id'], 'references' => ['authors', 'id']],
                 'CONSTRAINT "author_id_idx" FOREIGN KEY ("author_id") ' .
-                'REFERENCES "authors" ("id") ON UPDATE RESTRICT ON DELETE RESTRICT'
+                'REFERENCES "~authors" ("id") ON UPDATE RESTRICT ON DELETE RESTRICT'
             ],
             [
                 'author_id_idx',
                 ['type' => 'foreign', 'columns' => ['author_id'], 'references' => ['authors', 'id'], 'update' => 'cascade'],
                 'CONSTRAINT "author_id_idx" FOREIGN KEY ("author_id") ' .
-                'REFERENCES "authors" ("id") ON UPDATE CASCADE ON DELETE RESTRICT'
+                'REFERENCES "~authors" ("id") ON UPDATE CASCADE ON DELETE RESTRICT'
             ],
             [
                 'author_id_idx',
                 ['type' => 'foreign', 'columns' => ['author_id'], 'references' => ['authors', 'id'], 'update' => 'restrict'],
                 'CONSTRAINT "author_id_idx" FOREIGN KEY ("author_id") ' .
-                'REFERENCES "authors" ("id") ON UPDATE RESTRICT ON DELETE RESTRICT'
+                'REFERENCES "~authors" ("id") ON UPDATE RESTRICT ON DELETE RESTRICT'
             ],
             [
                 'author_id_idx',
                 ['type' => 'foreign', 'columns' => ['author_id'], 'references' => ['authors', 'id'], 'update' => 'setNull'],
                 'CONSTRAINT "author_id_idx" FOREIGN KEY ("author_id") ' .
-                'REFERENCES "authors" ("id") ON UPDATE SET NULL ON DELETE RESTRICT'
+                'REFERENCES "~authors" ("id") ON UPDATE SET NULL ON DELETE RESTRICT'
             ],
             [
                 'author_id_idx',
                 ['type' => 'foreign', 'columns' => ['author_id'], 'references' => ['authors', 'id'], 'update' => 'noAction'],
                 'CONSTRAINT "author_id_idx" FOREIGN KEY ("author_id") ' .
-                'REFERENCES "authors" ("id") ON UPDATE NO ACTION ON DELETE RESTRICT'
+                'REFERENCES "~authors" ("id") ON UPDATE NO ACTION ON DELETE RESTRICT'
             ],
         ];
     }
@@ -649,7 +663,7 @@ SQL;
             'type' => 'integer',
         ])->addConstraint($name, $data);
 
-        $this->assertEquals($expected, $schema->constraintSql($table, $name));
+        $this->assertEquals($this->applyConnectionPrefix($expected), $schema->constraintSql($table, $name, ConnectionManager::get('test')));
     }
 
     /**
@@ -699,6 +713,9 @@ SQL;
         $connection = $this->getMock('Cake\Database\Connection', [], [], '', false);
         $connection->expects($this->any())->method('driver')
             ->will($this->returnValue($driver));
+        $prefix = $this->_getConnectionPrefix(ConnectionManager::get('test'));
+        $connection->expects($this->any())->method('getPrefix')
+            ->will($this->returnValue($prefix));
 
         $table = (new Table('articles'))->addColumn('id', [
                 'type' => 'integer',
@@ -720,7 +737,7 @@ SQL;
             ]);
 
         $expected = <<<SQL
-CREATE TABLE "articles" (
+CREATE TABLE "{$prefix}articles" (
 "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 "title" VARCHAR NOT NULL,
 "body" TEXT,
@@ -731,7 +748,7 @@ SQL;
         $this->assertCount(2, $result);
         $this->assertTextEquals($expected, $result[0]);
         $this->assertEquals(
-            'CREATE INDEX "title_idx" ON "articles" ("title")',
+            $this->applyConnectionPrefix('CREATE INDEX "title_idx" ON "~articles" ("title")'),
             $result[1]
         );
     }
@@ -767,6 +784,9 @@ SQL;
         $connection = $this->getMock('Cake\Database\Connection', [], [], '', false);
         $connection->expects($this->any())->method('driver')
             ->will($this->returnValue($driver));
+        $prefix = $this->_getConnectionPrefix(ConnectionManager::get('test'));
+        $connection->expects($this->any())->method('getPrefix')
+            ->will($this->returnValue($prefix));
 
         $table = (new Table('articles_tags'))
             ->addColumn('article_id', [
@@ -783,7 +803,7 @@ SQL;
             ]);
 
         $expected = <<<SQL
-CREATE TABLE "articles_tags" (
+CREATE TABLE "{$prefix}articles_tags" (
 "article_id" INTEGER NOT NULL,
 "tag_id" INTEGER NOT NULL,
 CONSTRAINT "primary" PRIMARY KEY ("article_id", "tag_id")
@@ -811,7 +831,7 @@ SQL;
             ]);
 
         $expected = <<<SQL
-CREATE TABLE "composite_key" (
+CREATE TABLE "{$prefix}composite_key" (
 "id" INTEGER NOT NULL,
 "account_id" INTEGER NOT NULL,
 CONSTRAINT "primary" PRIMARY KEY ("id", "account_id")
@@ -834,10 +854,14 @@ SQL;
         $connection->expects($this->any())->method('driver')
             ->will($this->returnValue($driver));
 
+        $prefix = $this->_getConnectionPrefix(ConnectionManager::get('test'));
+        $connection->expects($this->any())->method('getPrefix')
+            ->will($this->returnValue($prefix));
+
         $table = new Table('articles');
         $result = $table->dropSql($connection);
         $this->assertCount(1, $result);
-        $this->assertEquals('DROP TABLE "articles"', $result[0]);
+        $this->assertEquals($this->applyConnectionPrefix('DROP TABLE "~articles"'), $result[0]);
     }
 
     /**
@@ -851,6 +875,10 @@ SQL;
         $connection = $this->getMock('Cake\Database\Connection', [], [], '', false);
         $connection->expects($this->any())->method('driver')
             ->will($this->returnValue($driver));
+
+        $prefix = $this->_getConnectionPrefix(ConnectionManager::get('test'));
+        $connection->expects($this->any())->method('getPrefix')
+            ->will($this->returnValue($prefix));
 
         $statement = $this->getMock(
             '\PDOStatement',
@@ -867,8 +895,8 @@ SQL;
         $table = new Table('articles');
         $result = $table->truncateSql($connection);
         $this->assertCount(2, $result);
-        $this->assertEquals('DELETE FROM sqlite_sequence WHERE name="articles"', $result[0]);
-        $this->assertEquals('DELETE FROM "articles"', $result[1]);
+        $this->assertEquals($this->applyConnectionPrefix('DELETE FROM sqlite_sequence WHERE name="~articles"'), $result[0]);
+        $this->assertEquals($this->applyConnectionPrefix('DELETE FROM "~articles"'), $result[1]);
     }
 
     /**
@@ -883,6 +911,10 @@ SQL;
         $connection->expects($this->any())->method('driver')
             ->will($this->returnValue($driver));
 
+        $prefix = $this->_getConnectionPrefix(ConnectionManager::get('test'));
+        $connection->expects($this->any())->method('getPrefix')
+            ->will($this->returnValue($prefix));
+
         $statement = $this->getMock(
             '\PDOStatement',
             ['execute', 'rowCount', 'closeCursor', 'fetch']
@@ -896,7 +928,7 @@ SQL;
         $table = new Table('articles');
         $result = $table->truncateSql($connection);
         $this->assertCount(1, $result);
-        $this->assertEquals('DELETE FROM "articles"', $result[0]);
+        $this->assertEquals($this->applyConnectionPrefix('DELETE FROM "~articles"'), $result[0]);
     }
 
     /**

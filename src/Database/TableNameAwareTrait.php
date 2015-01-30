@@ -16,7 +16,22 @@ trait TableNameAwareTrait
         'quoteStrings' => ['', '']
     ];
 
-    public function setTableNamesSettings($settings = []) {
+    /**
+     * Set the table name settings that will be used when prefixing
+     * is needed
+     *
+     * @param array $settings Array of settings to merge to the current settings
+     * Keys can be one of the following :
+     *
+     * - `prefix` - A string representing table name prefix
+     * - `tablesNames` - Array of tables names to look for when prefixing
+     * - `quoteStrings` - An array where the first value is the opening identifier quote strings
+     * and where the second is the closing identifier quote strings
+     *
+     * @return void
+     */
+    public function setTableNamesSettings(array $settings = [])
+    {
         $this->_tableNameSettings = array_merge($this->_tableNameSettings, $settings);
     }
 
@@ -25,7 +40,8 @@ trait TableNameAwareTrait
      *
      * @param string|array $tableNames Table names to be prefixed. An array can be given to prefix
      * multiple table names / SQL snippet at once
-     * @param bool $isFromOrJoin
+     * @param bool $isFromOrJoin Whether the method is called from a from clause or a join clause
+     * (more generally whether the first parameter is just a table name or more complex SQL snippet
      * @return string
      */
     public function prefixTableNames($tableNames, $isFromOrJoin = false)
@@ -101,6 +117,13 @@ trait TableNameAwareTrait
         return $prefixedFieldName;
     }
 
+    /**
+     * Returns the raw table name (meaning without its prefix
+     * if the parameter is a prefixed table name
+     *
+     * @param string $tableName Table name to "un-prefix"
+     * @return string
+     */
     public function rawTableName($tableName)
     {
         $prefix = $this->_tableNameSettings['prefix'];
@@ -123,8 +146,7 @@ trait TableNameAwareTrait
     {
         $prefix = $this->_tableNameSettings['prefix'];
 
-        if (
-            $prefix === '' ||
+        if ($prefix === '' ||
             strpos($tableName, $prefix) === false ||
             $tableName === $prefix
         ) {
@@ -239,5 +261,4 @@ trait TableNameAwareTrait
 
         return $wordPattern;
     }
-
 }

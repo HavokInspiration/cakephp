@@ -1,8 +1,8 @@
 <?php
 namespace Cake\Database;
 
-use Cake\Database\Expression\FieldInterface;
 use Cake\Database\ExpressionInterface;
+use Cake\Database\Expression\FieldInterface;
 use Cake\Database\Expression\IdentifierExpression;
 use Cake\Database\Expression\OrderByExpression;
 use Cake\Database\Expression\QueryExpression;
@@ -50,9 +50,9 @@ class TableNamePrefixer
         $query->valueBinder(false);
 
         $this->setTableNamesSettings([
-            'prefix' => $this->getPrefix(),
+            'prefix' => $this->_getPrefix(),
             'tablesNames' => $query->tablesNames,
-            'quoteStrings' => $this->getQuoteStrings()
+            'quoteStrings' => $this->_getQuoteStrings()
         ]);
 
         $this->_prefixParts();
@@ -100,12 +100,11 @@ class TableNamePrefixer
     {
         $field = $expression->getField();
 
-        if (
-            is_string($field) &&
+        if (is_string($field) &&
             strpos($field, '.') !== false &&
-            $this->needsPrefix($field, $this->getPrefix(), $this->_query->tablesNames, $this->getQuoteStrings())
+            $this->needsPrefix($field, $this->_getPrefix(), $this->_query->tablesNames, $this->_getQuoteStrings())
         ) {
-            $field = $this->prefixFieldName($field, $this->getPrefix(), $this->_query->tablesNames, $this->getQuoteStrings());
+            $field = $this->prefixFieldName($field, $this->_getPrefix(), $this->_query->tablesNames, $this->_getQuoteStrings());
             $expression->setField($field);
         }
     }
@@ -120,11 +119,11 @@ class TableNamePrefixer
     {
         $query = $this->_query;
         $binder = $this->_binder;
-        $prefix = $this->getPrefix();
+        $prefix = $this->_getPrefix();
 
         $expression->iterateParts(function ($condition, &$key) use ($query, $binder, $prefix) {
-            if ($this->needsPrefix($key, $this->getPrefix(), $this->_query->tablesNames, $this->getQuoteStrings())) {
-                $key = $this->prefixFieldName($key, $prefix, $this->_query->tablesNames, $this->getQuoteStrings());
+            if ($this->needsPrefix($key, $this->_getPrefix(), $this->_query->tablesNames, $this->_getQuoteStrings())) {
+                $key = $this->prefixFieldName($key, $prefix, $this->_query->tablesNames, $this->_getQuoteStrings());
 
                 if ($key instanceof ExpressionInterface) {
                     $key = $key->sql($binder);
@@ -144,14 +143,13 @@ class TableNamePrefixer
     protected function _prefixIdentifierExpression(IdentifierExpression $expression)
     {
         $identifier = $expression->getIdentifier();
-        $prefix = $this->getPrefix();
+        $prefix = $this->_getPrefix();
 
-        if (
-            is_string($identifier) &&
+        if (is_string($identifier) &&
             strpos($identifier, '.') !== false &&
-            $this->needsPrefix($identifier, $this->getPrefix(), $this->_query->tablesNames, $this->getQuoteStrings())
+            $this->needsPrefix($identifier, $this->_getPrefix(), $this->_query->tablesNames, $this->_getQuoteStrings())
         ) {
-            $identifier = $this->prefixFieldName($identifier, $prefix, $this->_query->tablesNames, $this->getQuoteStrings());
+            $identifier = $this->prefixFieldName($identifier, $prefix, $this->_query->tablesNames, $this->_getQuoteStrings());
             $expression->setIdentifier($identifier);
         }
     }
@@ -165,13 +163,12 @@ class TableNamePrefixer
     protected function _prefixQueryExpression(QueryExpression $expression)
     {
         $query = $this->_query;
-        $prefix = $this->getPrefix();
+        $prefix = $this->_getPrefix();
         $expression->iterateParts(function ($condition, $key) use ($query, $prefix) {
-            if (
-                is_string($condition) &&
-                $this->needsPrefix($condition, $this->getPrefix(), $this->_query->tablesNames, $this->getQuoteStrings())
+            if (is_string($condition) &&
+                $this->needsPrefix($condition, $this->_getPrefix(), $this->_query->tablesNames, $this->_getQuoteStrings())
             ) {
-                $condition = $this->prefixFieldName($condition, $prefix, $query->tablesNames, $this->getQuoteStrings());
+                $condition = $this->prefixFieldName($condition, $prefix, $query->tablesNames, $this->_getQuoteStrings());
             }
             return $condition;
         });
@@ -206,7 +203,7 @@ class TableNamePrefixer
      */
     protected function _prefixInsertParts($parts)
     {
-        $parts = $this->prefixTableNames($parts, $this->getPrefix(), $this->getQuoteStrings());
+        $parts = $this->prefixTableNames($parts, $this->_getPrefix(), $this->_getQuoteStrings());
         $this->_query->into($parts[0]);
     }
 
@@ -218,7 +215,7 @@ class TableNamePrefixer
      */
     protected function _prefixUpdateParts($parts)
     {
-        $parts = $this->prefixTableNames($parts, $this->getPrefix(), $this->getQuoteStrings());
+        $parts = $this->prefixTableNames($parts, $this->_getPrefix(), $this->_getQuoteStrings());
         $this->_query->update($parts[0]);
     }
 
@@ -245,8 +242,8 @@ class TableNamePrefixer
     {
         if (!empty($parts)) {
             foreach ($parts as $alias => $part) {
-                if ($this->hasTableName($part, $this->_query->tablesNames, $this->getQuoteStrings()) === true) {
-                    $parts[$alias] = $this->prefixFieldName($part, $this->getPrefix(), $this->_query->tablesNames, $this->getQuoteStrings());
+                if ($this->hasTableName($part, $this->_query->tablesNames, $this->_getQuoteStrings()) === true) {
+                    $parts[$alias] = $this->prefixFieldName($part, $this->_getPrefix(), $this->_query->tablesNames, $this->_getQuoteStrings());
                 }
             }
 
@@ -285,8 +282,8 @@ class TableNamePrefixer
     {
         if (!empty($parts)) {
             foreach ($parts as $key => $part) {
-                if ($this->needsPrefix($part, $this->getPrefix(), $this->_query->tablesNames, $this->getQuoteStrings())) {
-                    $parts[$key] = $this->prefixFieldName($part, $this->getPrefix(), $this->_query->tablesNames, $this->getQuoteStrings());
+                if ($this->needsPrefix($part, $this->_getPrefix(), $this->_query->tablesNames, $this->_getQuoteStrings())) {
+                    $parts[$key] = $this->prefixFieldName($part, $this->_getPrefix(), $this->_query->tablesNames, $this->_getQuoteStrings());
                 }
             }
         }
@@ -301,7 +298,7 @@ class TableNamePrefixer
      * @return string The connection prefix (or an empty string if no
      * prefix is configured)
      */
-    protected function getPrefix()
+    protected function _getPrefix()
     {
         return $this->_query->connection()->getPrefix();
     }
@@ -312,9 +309,8 @@ class TableNamePrefixer
      *
      * @return array Array with both quote strings
      */
-    protected function getQuoteStrings()
+    protected function _getQuoteStrings()
     {
         return $this->_query->connection()->driver()->getQuoteStrings();
     }
-
 }

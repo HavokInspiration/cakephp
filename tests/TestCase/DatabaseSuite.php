@@ -22,7 +22,6 @@ use \PHPUnit_Framework_TestResult;
 
 /**
  * All tests related to database
- *
  */
 class DatabaseSuite extends TestSuite
 {
@@ -66,7 +65,7 @@ class DatabaseSuite extends TestSuite
                 foreach ($this->tests as $testsKey => $tests) {
                     foreach ($tests->tests as $testCaseKey => $testCase) {
                         if (property_exists($testCase, 'fixtureManager') && $testCase->fixtureManager instanceof FixtureManager) {
-                            $this->tests[$testsKey]->tests[$testCaseKey]->fixtureManager->resetFixture($testCase, ConnectionManager::get('test'));
+                            $this->tests[$testsKey]->tests[$testCaseKey]->fixtureManager->resetFixture($testCase);
                         }
                     }
                 }
@@ -92,7 +91,8 @@ class DatabaseSuite extends TestSuite
      *
      * @return void
      */
-    public function prefixTestConnection() {
+    public function prefixTestConnection()
+    {
         $connection = ConnectionManager::get('test');
         $config = $connection->config();
         $config['className'] = get_class($connection);

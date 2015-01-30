@@ -120,7 +120,8 @@ use RuntimeException;
 class Table implements RepositoryInterface, EventListenerInterface
 {
 
-    use EventManagerTrait, TableNameAwareTrait;
+    use EventManagerTrait;
+    use TableNameAwareTrait;
 
     /**
      * Name of default validation set.

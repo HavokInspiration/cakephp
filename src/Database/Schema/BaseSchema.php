@@ -218,7 +218,7 @@ abstract class BaseSchema
      *
      * @param \Cake\Database\Schema\Table $table The table instance the column is in.
      * @param string $name The name of the column.
-     * @param Connection $connection
+     * @param Connection $connection Instance of a Connection object
      * @return string SQL fragment.
      */
     abstract public function constraintSql(Table $table, $name, Connection $connection);

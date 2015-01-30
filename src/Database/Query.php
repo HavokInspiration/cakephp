@@ -31,7 +31,8 @@ use IteratorAggregate;
 class Query implements ExpressionInterface, IteratorAggregate
 {
 
-    use TableNameAwareTrait, TypeMapTrait;
+    use TableNameAwareTrait
+    use TypeMapTrait;
 
     /**
      * Connection instance to be used to execute this query.
@@ -562,12 +563,11 @@ class Query implements ExpressionInterface, IteratorAggregate
             if (is_string($t) && $this->isTableNamePrefixed($t) === false) {
                 $this->tablesNames[$t] = $t;
                 $this->setTableNamesSettings(['tablesNames' => $this->tablesNames]);
-            } elseif (
-                is_array($t) &&
-                empty($alias) &&
-                empty($t['alias']) &&
-                is_string($t['table']) &&
-                $this->isTableNamePrefixed($t['table']) === false
+            } elseif (is_array($t) &&
+                      empty($alias) &&
+                      empty($t['alias']) &&
+                      is_string($t['table']) &&
+                      $this->isTableNamePrefixed($t['table']) === false
             ) {
                 $this->tablesNames[$t['table']] = $t['table'];
                 $this->setTableNamesSettings(['tablesNames' => $this->tablesNames]);

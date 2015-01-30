@@ -18,6 +18,9 @@ use Cake\Database\Query;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
 
+/**
+ * Tests for the TableNameAwareTrait
+ */
 class TableNameAwareTraitTest extends TestCase
 {
 
@@ -101,5 +104,4 @@ class TableNameAwareTraitTest extends TestCase
         $this->assertFalse($query->needsPrefix('prefix_articles.author_id = prefix_authors.id'));
         $this->assertTrue($query->needsPrefix('articles.author_id = authors.id'));
     }
-
 }

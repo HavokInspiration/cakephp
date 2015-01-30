@@ -538,10 +538,19 @@ class Table
         return $attrs;
     }
 
-    protected function _prefixForeignKeyReferences($references) {
+    /**
+     * Prefix a foreign key reference table name
+     *
+     * @param array $references Array where the first value is a table name
+     * that is used as a reference in a constraint SQL clause
+     * @return array
+     */
+    protected function _prefixForeignKeyReferences(array $references)
+    {
         $references[0] = $this->prefixTableName($references[0], true);
         return $references;
     }
+
     /**
      * Get the names of all the constraints in the table.
      *

@@ -14,8 +14,8 @@
  */
 namespace Cake\TestSuite\Traits;
 
-use Cake\Datasource\ConnectionManager;
 use Cake\Database\Connection;
+use Cake\Datasource\ConnectionManager;
 
 /**
  * Provides a set of methods that allow tests cases to test queries with connection prefix
@@ -70,5 +70,4 @@ trait ConnectionPrefixTestTrait
         $query = str_replace('~', $this->prefix, $query);
         return $query;
     }
-
 }

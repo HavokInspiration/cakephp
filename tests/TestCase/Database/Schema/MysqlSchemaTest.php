@@ -30,7 +30,8 @@ class MysqlSchemaTest extends TestCase
 
     use ConnectionPrefixTestTrait;
 
-    public function setUp() {
+    public function setUp()
+    {
         parent::setUp();
         $this->setPrefix();
     }

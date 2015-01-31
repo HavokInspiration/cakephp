@@ -63,7 +63,7 @@ class TableTest extends TestCase
     /**
      * Handy variable containing the next primary key that will be inserted in the
      * users table
-     *
+     *hp
      * @var int
      */
     public static $nextUserId = 5;
@@ -1972,6 +1972,7 @@ class TableTest extends TestCase
      */
     public function testSaveNewErrorOnNoPrimaryKey()
     {
+        $this->skipIfConnectionPrefix();
         $entity = new \Cake\ORM\Entity(['username' => 'superuser']);
         $table = TableRegistry::get('users', [
             'schema' => [
@@ -3629,6 +3630,7 @@ class TableTest extends TestCase
      */
     public function testGetNotFoundException()
     {
+        $this->skipIfConnectionPrefix();
         $table = new Table([
             'name' => 'Articles',
             'connection' => $this->connection,
@@ -3646,6 +3648,7 @@ class TableTest extends TestCase
      */
     public function testGetExceptionOnNoData()
     {
+        $this->skipIfConnectionPrefix();
         $table = new Table([
             'name' => 'Articles',
             'connection' => $this->connection,
@@ -3663,6 +3666,7 @@ class TableTest extends TestCase
      */
     public function testGetExceptionOnTooMuchData()
     {
+        $this->skipIfConnectionPrefix();
         $table = new Table([
             'name' => 'Articles',
             'connection' => $this->connection,

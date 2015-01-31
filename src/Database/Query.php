@@ -31,7 +31,7 @@ use IteratorAggregate;
 class Query implements ExpressionInterface, IteratorAggregate
 {
 
-    use TableNameAwareTrait
+    use TableNameAwareTrait;
     use TypeMapTrait;
 
     /**

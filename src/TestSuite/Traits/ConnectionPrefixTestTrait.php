@@ -70,4 +70,34 @@ trait ConnectionPrefixTestTrait
         $query = str_replace('~', $this->prefix, $query);
         return $query;
     }
+
+    /**
+     * Will skip the current test if no connection prefix is configured
+     *
+     * @return void
+     */
+    public function skipIfNoConnectionPrefix()
+    {
+        $config = ConnectionManager::config('test');
+        if (!isset($config['prefix']) || $config['prefix'] === '') {
+            $this->markTestSkipped(
+                'No connection prefix is configured.'
+            );
+        }
+    }
+
+    /**
+     * Will skip the current test if a connection prefix is configured
+     *
+     * @return void
+     */
+    public function skipIfConnectionPrefix()
+    {
+        $config = ConnectionManager::config('test');
+        if (isset($config['prefix']) && $config['prefix'] !== '') {
+            $this->markTestSkipped(
+                'A connection prefix is configured.'
+            );
+        }
+    }
 }

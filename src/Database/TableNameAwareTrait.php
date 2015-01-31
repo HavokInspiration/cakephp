@@ -54,11 +54,10 @@ trait TableNameAwareTrait
             foreach ($tableNames as $k => $tableName) {
                 if (is_string($tableName) && $this->isTableNamePrefixed($tableName, $isFromOrJoin) === false) {
                     $tableNames[$k] = $prefix . $tableName;
-                } elseif (
-                    is_array($tableName) &&
-                    isset($tableName['table']) &&
-                    is_string($tableName['table']) &&
-                    $this->isTableNamePrefixed($tableName['table'], $isFromOrJoin) === false
+                } elseif (is_array($tableName) &&
+                          isset($tableName['table']) &&
+                          is_string($tableName['table']) &&
+                          $this->isTableNamePrefixed($tableName['table'], $isFromOrJoin) === false
                 ) {
                     $tableNames[$k]['table'] = $this->prefixTableName($tableName['table'], $isFromOrJoin);
                 }
@@ -72,7 +71,8 @@ trait TableNameAwareTrait
      * Prefix a table name
      *
      * @param string $tableName Table name to be prefixed
-     * @param bool $isFromOrJoin
+     * @param bool $isFromOrJoin Whether the method is called from a from clause or a join clause
+     * (more generally whether the first parameter is just a table name or more complex SQL snippet
      * @return string
      */
     public function prefixTableName($tableName, $isFromOrJoin = false)
@@ -139,7 +139,8 @@ trait TableNameAwareTrait
      * contains a table name that is prefixed
      *
      * @param string $tableName Table or field name or SQL snippet
-     * @param bool $isFromOrJoin
+     * @param bool $isFromOrJoin Whether the method is called from a from clause or a join clause
+     * (more generally whether the first parameter is just a table name or more complex SQL snippet
      * @return bool
      */
     public function isTableNamePrefixed($tableName, $isFromOrJoin = false)

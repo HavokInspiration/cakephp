@@ -3562,7 +3562,7 @@ class TableTest extends TestCase
         return [
             [
                 ['fields' => ['id'], 'cache' => 'default'],
-                'get:test.table_name[10]', 'default'
+                'get:test.~table_name[10]', 'default'
             ],
             [
                 ['fields' => ['id'], 'cache' => 'default', 'key' => 'custom_key'],
@@ -3582,6 +3582,8 @@ class TableTest extends TestCase
      */
     public function testGetWithCache($options, $cacheKey, $cacheConfig)
     {
+        $cacheKey = $this->applyConnectionPrefix($cacheKey);
+
         $table = $this->getMock(
             '\Cake\ORM\Table',
             ['callFinder', 'query'],

@@ -63,7 +63,7 @@ class TableTest extends TestCase
     /**
      * Handy variable containing the next primary key that will be inserted in the
      * users table
-     *hp
+     *
      * @var int
      */
     public static $nextUserId = 5;

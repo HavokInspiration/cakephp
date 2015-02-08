@@ -343,6 +343,7 @@ SQL;
     public function testDescribeTableIndexes()
     {
         $connection = ConnectionManager::get('test');
+        $prefix = $connection->getPrefix();
         $this->_createTables($connection);
 
         $schema = new SchemaCollection($connection);
@@ -366,7 +367,7 @@ SQL;
             'schema_articles_ibfk_1' => [
                 'type' => 'foreign',
                 'columns' => ['author_id'],
-                'references' => ['schema_authors', 'id'],
+                'references' => [$prefix . 'schema_authors', 'id'],
                 'length' => [],
                 'update' => 'cascade',
                 'delete' => 'restrict',
@@ -374,7 +375,7 @@ SQL;
         ];
         $this->assertEquals($expected['primary'], $result->constraint('primary'));
         $this->assertEquals($expected['length_idx'], $result->constraint('length_idx'));
-        $this->assertEquals($expected['schema_articles_ibfk_1'], $result->constraint('schema_articles_ibfk_1'));
+        $this->assertEquals($expected['schema_articles_ibfk_1'], $result->constraint($prefix . 'schema_articles_ibfk_1'));
 
         $this->assertCount(1, $result->indexes());
         $expected = [

@@ -80,13 +80,14 @@ class FixtureManager
      *
      * @return void
      */
-    public function resetFixture(TestCase $test)
+    public function resetFixture(TestCase $test, $db)
     {
         if (!empty($test->fixtures) && !empty($this->_processed[get_class($test)])) {
             unset($this->_processed[get_class($test)]);
 
             foreach ($test->fixtures as $fixture) {
                 if (is_string($fixture) && isset($this->_loaded[$fixture])) {
+                    $this->_loaded[$fixture]->drop($db);
                     unset($this->_loaded[$fixture]);
                 }
             }

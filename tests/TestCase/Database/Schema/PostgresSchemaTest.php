@@ -458,6 +458,7 @@ SQL;
     public function testDescribeTableIndexes()
     {
         $connection = ConnectionManager::get('test');
+        $prefix = $connection->getPrefix();
         $this->_createTables($connection);
 
         $schema = new SchemaCollection($connection);
@@ -490,7 +491,7 @@ SQL;
             'author_idx' => [
                 'type' => 'foreign',
                 'columns' => ['author_id'],
-                'references' => ['schema_authors', 'id'],
+                'references' => [$prefix. 'schema_authors', 'id'],
                 'length' => [],
                 'update' => 'cascade',
                 'delete' => 'restrict',

@@ -39,7 +39,7 @@ class PostgresSchema extends BaseSchema
      */
     public function describeColumnSql($tableName, $config)
     {
-//        $tableName = $this->getFullTableName($tableName, $config);
+        $tableName = $this->getFullTableName($tableName, $config, false);
         $sql =
         'SELECT DISTINCT table_schema AS schema, column_name AS name, data_type AS type,
 			is_nullable AS null, column_default AS default,
@@ -182,7 +182,7 @@ class PostgresSchema extends BaseSchema
      */
     public function describeIndexSql($tableName, $config)
     {
-        $tableName = $this->getFullTableName($tableName, $config);
+        $tableName = $this->getFullTableName($tableName, $config, false);
         $sql = 'SELECT
 			c2.relname,
 			i.indisprimary,
@@ -269,7 +269,7 @@ class PostgresSchema extends BaseSchema
      */
     public function describeForeignKeySql($tableName, $config)
     {
-        $tableName = $this->getFullTableName($tableName, $config);
+        $tableName = $this->getFullTableName($tableName, $config, false);
         $sql = "SELECT
 			r.conname AS name,
 			r.confupdtype AS update_type,
@@ -427,7 +427,7 @@ class PostgresSchema extends BaseSchema
     {
         $data = $table->constraint($name);
         if (isset($data['references'][0])) {
-            $data['references'][0] = $this->getFullTableName($data['references'][0], $connection->config());
+            $data['references'][0] = $this->getFullTableName($data['references'][0], $connection->config(), false);
         }
         $out = 'CONSTRAINT ' . $this->_driver->quoteIdentifier($name);
         if ($data['type'] === Table::CONSTRAINT_PRIMARY) {

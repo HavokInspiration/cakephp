@@ -491,7 +491,7 @@ SQL;
             'author_idx' => [
                 'type' => 'foreign',
                 'columns' => ['author_id'],
-                'references' => [$prefix. 'schema_authors', 'id'],
+                'references' => [$prefix . 'schema_authors', 'id'],
                 'length' => [],
                 'update' => 'cascade',
                 'delete' => 'restrict',

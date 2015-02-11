@@ -1413,6 +1413,28 @@ class QueryTest extends TestCase
     }
 
     /**
+     * Tests to check if this test passes with PostgreSQL
+     *
+     * @return void
+     */
+    public function testFailingPostgre()
+    {
+        $query = new Query($this->connection);
+        $result = $query
+            ->select(['total' => 'count(author_id)', 'author_id'])
+            ->from(['Articles' => 'articles'])
+            ->join([
+                'table' => 'authors',
+                'alias' => 'a',
+                'conditions' => ['Articles.author_id' => 'a.id']
+            ])
+            ->group('Articles.author_id')
+            ->execute();
+        $expected = [['total' => 2, 'author_id' => 1], ['total' => '1', 'author_id' => 3]];
+        $this->assertEquals($expected, $result->fetchAll('assoc'));
+    }
+
+    /**
      * Tests that group by fields can be passed similar to select fields
      * and that it sends the correct query to the database
      *

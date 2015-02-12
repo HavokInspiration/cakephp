@@ -62,6 +62,8 @@ class DatabaseSuite extends TestSuite
                 ConnectionManager::get('test')->driver()->autoQuoting(false);
             },
             'Identifier Quoting / Prefix' => function () {
+                ConnectionManager::get('test')->execute('DROP TABLE IF EXISTS schema_articles');
+                ConnectionManager::get('test')->execute('DROP TABLE IF EXISTS schema_authors');
                 $this->prefixTestConnection();
                 foreach ($this->tests as $testsKey => $tests) {
                     foreach ($tests->tests as $testCaseKey => $testCase) {

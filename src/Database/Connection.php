@@ -300,6 +300,22 @@ class Connection
     }
 
     /**
+     * Retrieves the connection prefix from the connection config
+     *
+     * @return string Connection prefix if any
+     */
+    public function getPrefix()
+    {
+        $prefix = '';
+
+        if (isset($this->_config['prefix']) && $this->_config['prefix'] !== '') {
+            $prefix = $this->_config['prefix'];
+        }
+
+        return $prefix;
+    }
+
+    /**
      * Gets or sets a Schema\Collection object for this connection.
      *
      * @param \Cake\Database\Schema\Collection|null $collection The schema collection object

@@ -19,6 +19,7 @@ use Cake\Core\Exception\Exception;
 use Cake\Database\Connection;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\Fixture\TestFixture;
+use Cake\TestSuite\TestCase;
 use Cake\Utility\Inflector;
 
 /**
@@ -66,6 +67,31 @@ class FixtureManager
         }
         $this->_loadFixtures($test);
         $this->_processed[get_class($test)] = true;
+    }
+
+    /**
+     * Allow fixtures to be reset from a specific test
+     * This is needed in the DatabaseTestSuite when testing with prefix.
+     * Initially, fixtures are loaded without prefix. They need to be prefixed
+     * for the suite to run with a prefix configured.
+     *
+     * @param TestCase $test Instance of the test where the fixtures needs to
+     * be reset
+     *
+     * @return void
+     */
+    public function resetFixture(TestCase $test, $db)
+    {
+        if (!empty($test->fixtures) && !empty($this->_processed[get_class($test)])) {
+            unset($this->_processed[get_class($test)]);
+
+            foreach ($test->fixtures as $fixture) {
+                if (is_string($fixture) && isset($this->_loaded[$fixture])) {
+                    $this->_loaded[$fixture]->drop($db);
+                    unset($this->_loaded[$fixture]);
+                }
+            }
+        }
     }
 
     /**
@@ -198,6 +224,10 @@ class FixtureManager
         }
 
         $table = $fixture->table;
+        $dbPrefix = $db->getPrefix();
+        if (is_string($dbPrefix) && $dbPrefix !== '') {
+            $table = $dbPrefix . $table;
+        }
         $exists = in_array($table, $sources);
 
         if ($drop && $exists) {

@@ -23,6 +23,7 @@ use Cake\ORM\Query;
 use Cake\ORM\Table;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
+use Cake\TestSuite\Traits\ConnectionPrefixTestTrait;
 
 /**
  * Tests BelongsTo class
@@ -30,6 +31,8 @@ use Cake\TestSuite\TestCase;
  */
 class BelongsToTest extends TestCase
 {
+
+    use ConnectionPrefixTestTrait;
 
     /**
      * Fixtures to use.
@@ -53,6 +56,7 @@ class BelongsToTest extends TestCase
     public function setUp()
     {
         parent::setUp();
+        $this->setPrefix();
         $this->company = TableRegistry::get('Companies', [
             'schema' => [
                 'id' => ['type' => 'integer'],
@@ -125,7 +129,7 @@ class BelongsToTest extends TestCase
                     'Companies.is_active' => true,
                     ['Companies.id' => $field]
                 ], $this->companiesTypeMap),
-                'table' => 'companies',
+                'table' => $this->applyConnectionPrefix('~companies'),
                 'type' => 'LEFT'
             ]
         ]);
@@ -158,7 +162,7 @@ class BelongsToTest extends TestCase
                     ['Companies.id' => $field]
                 ], $this->companiesTypeMap),
                 'type' => 'LEFT',
-                'table' => 'companies',
+                'table' => $this->applyConnectionPrefix('~companies')
             ]
         ]);
         $query->expects($this->never())->method('select');
@@ -188,7 +192,7 @@ class BelongsToTest extends TestCase
                     'Companies.is_active' => true,
                     ['Companies.id' => $field]
                 ], $this->companiesTypeMap),
-                'table' => 'companies',
+                'table' => $this->applyConnectionPrefix('~companies'),
                 'type' => 'INNER'
             ]
         ]);
@@ -273,7 +277,7 @@ class BelongsToTest extends TestCase
                     'Companies.is_active' => true,
                     ['Companies.id' => $field1, 'Companies.tenant_id' => $field2]
                 ], $this->companiesTypeMap),
-                'table' => 'companies',
+                'table' => $this->applyConnectionPrefix('~companies'),
                 'type' => 'LEFT'
             ]
         ]);

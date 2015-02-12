@@ -20,6 +20,7 @@ use Cake\Datasource\ConnectionManager;
 use Cake\ORM\Table;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
+use Cake\TestSuite\Traits\ConnectionPrefixTestTrait;
 use Cake\Validation\Validator;
 
 /**
@@ -43,6 +44,8 @@ class MyUsersTable extends Table
 class TableRegistryTest extends TestCase
 {
 
+    use ConnectionPrefixTestTrait;
+
     /**
      * setup
      *
@@ -51,6 +54,7 @@ class TableRegistryTest extends TestCase
     public function setUp()
     {
         parent::setUp();
+        $this->setPrefix();
         Configure::write('App.namespace', 'TestApp');
     }
 
@@ -163,11 +167,11 @@ class TableRegistryTest extends TestCase
             'table' => 'my_articles',
         ]);
         $this->assertInstanceOf('Cake\ORM\Table', $result);
-        $this->assertEquals('my_articles', $result->table());
+        $this->assertEquals($this->applyConnectionPrefix('~my_articles'), $result->table());
 
         $result2 = TableRegistry::get('Articles');
         $this->assertSame($result, $result2);
-        $this->assertEquals('my_articles', $result->table());
+        $this->assertEquals($this->applyConnectionPrefix('~my_articles'), $result->table());
     }
 
     /**
@@ -181,7 +185,7 @@ class TableRegistryTest extends TestCase
             'table' => 'my_articles',
         ]);
         $result = TableRegistry::get('Articles');
-        $this->assertEquals('my_articles', $result->table(), 'Should use config() data.');
+        $this->assertEquals($this->applyConnectionPrefix('~my_articles'), $result->table(), 'Should use config() data.');
     }
 
     /**
@@ -347,7 +351,7 @@ class TableRegistryTest extends TestCase
 
         $table = TableRegistry::get('users', ['table' => 'users']);
         $this->assertInstanceOf('Cake\ORM\Table', $table);
-        $this->assertEquals('users', $table->table());
+        $this->assertEquals($this->applyConnectionPrefix('~users'), $table->table());
         $this->assertEquals('users', $table->alias());
         $this->assertSame($connection, $table->connection());
         $this->assertEquals(array_keys($schema), $table->schema()->columns());

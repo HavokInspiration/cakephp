@@ -31,6 +31,7 @@ use IteratorAggregate;
 class Query implements ExpressionInterface, IteratorAggregate
 {
 
+    use TableNameAwareTrait;
     use TypeMapTrait;
 
     /**
@@ -122,6 +123,13 @@ class Query implements ExpressionInterface, IteratorAggregate
     protected $_useBufferedResults = true;
 
     /**
+     * Stores the tables names used in this query
+     *
+     * @var array
+     */
+    public $tablesNames = array();
+
+    /**
      * Constructor.
      *
      * @param \Cake\Database\Connection $connection The connection
@@ -130,6 +138,17 @@ class Query implements ExpressionInterface, IteratorAggregate
     public function __construct($connection)
     {
         $this->connection($connection);
+        $tableNameSettings = [];
+
+        if ($this->connection() instanceof Connection) {
+            $tableNameSettings['prefix'] = $this->connection()->getPrefix();
+
+            if ($this->connection()->driver() instanceof Driver) {
+                $tableNameSettings['quoteStrings'] = $this->connection()->driver()->getQuoteStrings();
+            }
+        }
+
+        $this->setTableNamesSettings($tableNameSettings);
     }
 
     /**
@@ -395,6 +414,8 @@ class Query implements ExpressionInterface, IteratorAggregate
             $tables = [$tables];
         }
 
+        $this->_extractTableNames($tables);
+
         if ($overwrite) {
             $this->_parts['from'] = $tables;
         } else {
@@ -402,6 +423,29 @@ class Query implements ExpressionInterface, IteratorAggregate
         }
 
         $this->_dirty();
+        return $this;
+    }
+
+    /**
+     * Extract table aliases from $tables and stores them in Query::_tableAliases
+     *
+     * @param string|array $tables Table name or array of table name
+     *
+     * @return $this
+     */
+    protected function _extractTableNames($tables)
+    {
+        if (empty($tables)) {
+            return $this;
+        }
+        foreach ($tables as $alias => $table) {
+            if (is_numeric($alias) && is_string($table)) {
+                if ($this->isTableNamePrefixed($table) === false) {
+                    $this->tablesNames[$table] = $table;
+                    $this->setTableNamesSettings(['tablesNames' => $this->tablesNames]);
+                }
+            }
+        }
         return $this;
     }
 
@@ -515,6 +559,20 @@ class Query implements ExpressionInterface, IteratorAggregate
             if (!($t['conditions'] instanceof ExpressionInterface)) {
                 $t['conditions'] = $this->newExpr()->add($t['conditions'], $types);
             }
+
+            if (is_string($t) && $this->isTableNamePrefixed($t) === false) {
+                $this->tablesNames[$t] = $t;
+                $this->setTableNamesSettings(['tablesNames' => $this->tablesNames]);
+            } elseif (is_array($t) &&
+                      empty($alias) &&
+                      empty($t['alias']) &&
+                      is_string($t['table']) &&
+                      $this->isTableNamePrefixed($t['table']) === false
+            ) {
+                $this->tablesNames[$t['table']] = $t['table'];
+                $this->setTableNamesSettings(['tablesNames' => $this->tablesNames]);
+            }
+
             $alias = is_string($alias) ? $alias : null;
             $joins[$alias ?: $i++] = $t + ['type' => 'INNER', 'alias' => $alias];
         }

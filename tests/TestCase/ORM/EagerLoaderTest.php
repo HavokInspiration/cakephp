@@ -23,6 +23,7 @@ use Cake\ORM\Query;
 use Cake\ORM\Table;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
+use Cake\TestSuite\Traits\ConnectionPrefixTestTrait;
 
 /**
  * Tests EagerLoader
@@ -30,6 +31,8 @@ use Cake\TestSuite\TestCase;
  */
 class EagerLoaderTest extends TestCase
 {
+
+    use ConnectionPrefixTestTrait;
 
     /**
      * setUp method
@@ -39,6 +42,7 @@ class EagerLoaderTest extends TestCase
     public function setUp()
     {
         parent::setUp();
+        $this->setPrefix();
         $this->connection = ConnectionManager::get('test');
         $schema = [
             'id' => ['type' => 'integer'],
@@ -155,7 +159,7 @@ class EagerLoaderTest extends TestCase
 
         $query->expects($this->at(0))->method('join')
             ->with(['clients' => [
-                'table' => 'clients',
+                'table' => $this->applyConnectionPrefix('~clients'),
                 'type' => 'LEFT',
                 'conditions' => new QueryExpression([
                     ['clients.id' => new IdentifierExpression('foo.client_id')],
@@ -165,7 +169,7 @@ class EagerLoaderTest extends TestCase
 
         $query->expects($this->at(1))->method('join')
             ->with(['orders' => [
-                'table' => 'orders',
+                'table' => $this->applyConnectionPrefix('~orders'),
                 'type' => 'LEFT',
                 'conditions' => new QueryExpression([
                     ['clients.id' => new IdentifierExpression('orders.client_id')]
@@ -175,7 +179,7 @@ class EagerLoaderTest extends TestCase
 
         $query->expects($this->at(2))->method('join')
             ->with(['orderTypes' => [
-                'table' => 'order_types',
+                'table' => $this->applyConnectionPrefix('~order_types'),
                 'type' => 'LEFT',
                 'conditions' => new QueryExpression([
                     ['orderTypes.id' => new IdentifierExpression('orders.order_type_id')]
@@ -185,7 +189,7 @@ class EagerLoaderTest extends TestCase
 
         $query->expects($this->at(3))->method('join')
             ->with(['stuff' => [
-                'table' => 'things',
+                'table' => $this->applyConnectionPrefix('~things'),
                 'type' => 'LEFT',
                 'conditions' => new QueryExpression([
                     ['orders.id' => new IdentifierExpression('stuff.order_id')]
@@ -195,7 +199,7 @@ class EagerLoaderTest extends TestCase
 
         $query->expects($this->at(4))->method('join')
             ->with(['stuffTypes' => [
-                'table' => 'stuff_types',
+                'table' => $this->applyConnectionPrefix('~stuff_types'),
                 'type' => 'LEFT',
                 'conditions' => new QueryExpression([
                     ['stuffTypes.id' => new IdentifierExpression('stuff.stuff_type_id')]
@@ -205,7 +209,7 @@ class EagerLoaderTest extends TestCase
 
         $query->expects($this->at(5))->method('join')
             ->with(['companies' => [
-                'table' => 'organizations',
+                'table' => $this->applyConnectionPrefix('~organizations'),
                 'type' => 'LEFT',
                 'conditions' => new QueryExpression([
                     ['companies.id' => new IdentifierExpression('clients.organization_id')]
@@ -215,7 +219,7 @@ class EagerLoaderTest extends TestCase
 
         $query->expects($this->at(6))->method('join')
             ->with(['categories' => [
-                'table' => 'categories',
+                'table' => $this->applyConnectionPrefix('~categories'),
                 'type' => 'LEFT',
                 'conditions' => new QueryExpression([
                     ['categories.id' => new IdentifierExpression('companies.category_id')]

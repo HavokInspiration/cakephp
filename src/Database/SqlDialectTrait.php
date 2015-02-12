@@ -81,7 +81,11 @@ trait SqlDialectTrait
      */
     public function getQuoteStrings()
     {
-        return [$this->_startQuote, $this->_endQuote];
+        if ($this->autoQuoting()) {
+            return [$this->_startQuote, $this->_endQuote];
+        }
+
+        return ['', ''];
     }
 
     /**

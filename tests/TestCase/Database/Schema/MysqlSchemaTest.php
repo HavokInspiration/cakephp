@@ -201,6 +201,9 @@ class MysqlSchemaTest extends TestCase
         $prefix = $this->_getConnectionPrefix($connection);
 
         $this->_needsConnection();
+
+        $connection->execute('DROP TABLE IF EXISTS schema_articles');
+        $connection->execute('DROP TABLE IF EXISTS schema_authors');
         $connection->execute($this->applyConnectionPrefix('DROP TABLE IF EXISTS ~schema_articles'));
         $connection->execute($this->applyConnectionPrefix('DROP TABLE IF EXISTS ~schema_authors'));
 

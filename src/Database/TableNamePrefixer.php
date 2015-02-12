@@ -168,27 +168,6 @@ class TableNamePrefixer
     }
 
     /**
-     * Prefix join conditions (QueryExpression objects)
-     * Used to prefix table.field = table2.field2
-     *
-     * @param \Cake\Database\Expression\QueryExpression $expression The expression to prefix
-     * @return void
-     */
-    protected function _prefixJoinConditions(QueryExpression $expression)
-    {
-        $query = $this->_query;
-        $prefix = $this->_getPrefix();
-        $expression->iterateParts(function ($condition, $key) use ($query, $prefix) {
-            if (is_string($condition) &&
-                $this->needsPrefix($condition)
-            ) {
-                $condition = $this->prefixFieldName($condition);
-            }
-            return $condition;
-        });
-    }
-
-    /**
      * Prefixes the table name in the "update" clause
      *
      * @param array $parts the parts of the query to prefix
@@ -256,9 +235,6 @@ class TableNamePrefixer
         if (!empty($parts)) {
             foreach ($parts as $alias => $join) {
                 $join['table'] = $this->prefixTableNames($join['table'], true);
-
-                $this->_prefixJoinConditions($join['conditions']);
-
                 $parts[$alias] = $join;
             }
 

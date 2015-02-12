@@ -210,7 +210,7 @@ class QueryTest extends TestCase
         $this->assertCount(12, $result, 'Cross join results in 12 records');
 
         $result = $query->join([
-            ['table' => 'authors', 'type' => 'INNER', 'conditions' => 'author_id = authors.id']
+            ['table' => 'authors', 'type' => 'INNER', 'conditions' => ['author_id' => new IdentifierExpression('authors.id')]]
         ], [], true)->execute();
         $this->assertCount(3, $result);
         $this->assertEquals(['title' => 'First Article', 'name' => 'mariano'], $result->fetch('assoc'));
@@ -1542,7 +1542,7 @@ class QueryTest extends TestCase
             ->select(['comments.id'])
             ->from('comments')
             ->where(function ($exp, $q) {
-                $field = $q->newExpr('COALESCE(comments.id, 1)');
+                $field = $q->newExpr($this->applyConnectionPrefix('COALESCE(~comments.id, 1)'));
                 return $exp->between($field, 5, 6, 'integer');
             })
             ->execute();
@@ -1765,7 +1765,7 @@ class QueryTest extends TestCase
         $result = $query
             ->select(['total' => 'count(author_id)', 'author_id'])
             ->from(['Articles' => 'articles'])
-            ->join(['table' => 'authors', 'alias' => 'a', 'conditions' => 'Articles.author_id = a.id'])
+            ->join(['table' => 'authors', 'alias' => 'a', 'conditions' => ['Articles.author_id' => new IdentifierExpression('a.id')]])
             ->group('Articles.author_id')
             ->execute();
         $expected = [['total' => 2, 'author_id' => 1], ['total' => '1', 'author_id' => 3]];
@@ -1775,7 +1775,7 @@ class QueryTest extends TestCase
         $result = $query
             ->select(['total' => 'count(author_id)', 'author_id'])
             ->from('articles')
-            ->join(['table' => 'authors', 'alias' => 'a', 'conditions' => 'articles.author_id = a.id'])
+            ->join(['table' => 'authors', 'alias' => 'a', 'conditions' => ['articles.author_id'  => new IdentifierExpression('a.id')]])
             ->group('articles.author_id')
             ->execute();
         $expected = [['total' => 2, 'author_id' => 1], ['total' => '1', 'author_id' => 3]];
@@ -1912,7 +1912,7 @@ class QueryTest extends TestCase
         $result = $query
             ->select(['total' => 'count(author_id)', 'author_id'])
             ->from('articles')
-            ->join(['table' => 'authors', 'alias' => 'a', 'conditions' => 'articles.author_id = a.id'])
+            ->join(['table' => 'authors', 'alias' => 'a', 'conditions' => ['articles.author_id' => new IdentifierExpression('a.id')]])
             ->group('articles.author_id')
             ->having(['count(articles.author_id) <' => 2], ['count(articles.author_id)' => 'integer'])
             ->execute();
@@ -1923,7 +1923,7 @@ class QueryTest extends TestCase
         $result = $query
             ->select(['total' => 'count(author_id)', 'author_id'])
             ->from(['Articles' => 'articles'])
-            ->join(['table' => 'authors', 'alias' => 'a', 'conditions' => 'Articles.author_id = a.id'])
+            ->join(['table' => 'authors', 'alias' => 'a', 'conditions' => ['Articles.author_id' => new IdentifierExpression('a.id')]])
             ->group('Articles.author_id')
             ->having(['count(Articles.author_id) <' => 2], ['count(Articles.author_id)' => 'integer'])
             ->execute();
@@ -2281,7 +2281,7 @@ class QueryTest extends TestCase
      *
      * @return void
      */
-    public function testSubqueyInJoin()
+    public function testSubqueryInJoin()
     {
         $subquery = (new Query($this->connection))->select('*')->from('authors');
 
@@ -2297,7 +2297,7 @@ class QueryTest extends TestCase
         $result = $query->execute();
         $this->assertCount(3, $result);
 
-        $query->join(['b' => ['table' => $subquery, 'conditions' => ['b.id = articles.id']]], [], true);
+        $query->join(['b' => ['table' => $subquery, 'conditions' => [['b.id' => new IdentifierExpression('articles.id')]]]], [], true);
         $result = $query->execute();
         $this->assertCount(1, $result);
     }

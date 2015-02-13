@@ -208,13 +208,21 @@ class SqliteSchemaTest extends TestCase
     protected function _createTables($connection)
     {
         $this->_needsConnection();
-        $connection->execute('DROP TABLE schema_articles');
-        $connection->execute('DROP TABLE schema_authors');
 
         $prefix = $this->_getConnectionPrefix($connection);
 
         $schema = new SchemaCollection($connection);
         $result = $schema->listTables();
+
+        if (!empty($prefix)) {
+            if (in_array('schema_articles', $result)) {
+                $connection->execute('DROP TABLE schema_articles');
+            }
+
+            if (in_array('schema_authors', $result)) {
+                $connection->execute('DROP TABLE schema_authors');
+            }
+        }
 
         if (in_array($prefix . 'schema_articles', $result) &&
             in_array($prefix . 'schema_authors', $result)

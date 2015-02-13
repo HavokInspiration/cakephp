@@ -1775,7 +1775,7 @@ class QueryTest extends TestCase
         $result = $query
             ->select(['total' => 'count(author_id)', 'author_id'])
             ->from('articles')
-            ->join(['table' => 'authors', 'alias' => 'a', 'conditions' => ['articles.author_id'  => new IdentifierExpression('a.id')]])
+            ->join(['table' => 'authors', 'alias' => 'a', 'conditions' => ['articles.author_id' => new IdentifierExpression('a.id')]])
             ->group('articles.author_id')
             ->execute();
         $expected = [['total' => 2, 'author_id' => 1], ['total' => '1', 'author_id' => 3]];

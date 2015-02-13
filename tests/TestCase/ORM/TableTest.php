@@ -760,7 +760,7 @@ class TableTest extends TestCase
         $this->assertEquals(['b' => 'c'], $belongsToMany->conditions());
         $this->assertEquals(['foo' => 'asc'], $belongsToMany->sort());
         $this->assertSame($table, $belongsToMany->source());
-        $this->assertSame('things_tags', $belongsToMany->junction()->table());
+        $this->assertSame($this->applyConnectionPrefix('~things_tags'), $belongsToMany->junction()->table());
     }
 
     /**

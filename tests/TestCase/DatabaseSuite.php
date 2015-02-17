@@ -62,14 +62,15 @@ class DatabaseSuite extends TestSuite
                 ConnectionManager::get('test')->driver()->autoQuoting(false);
             },
             'Identifier Quoting / Prefix' => function () {
-                $this->prefixTestConnection();
                 foreach ($this->tests as $testsKey => $tests) {
                     foreach ($tests->tests as $testCaseKey => $testCase) {
                         if (property_exists($testCase, 'fixtureManager') && $testCase->fixtureManager instanceof FixtureManager) {
-                            $testCase->fixtureManager->resetFixture($testCase, ConnectionManager::get('testNoPrefix'));
+                            $testCase->fixtureManager->shutDown();
+                            break 2;
                         }
                     }
                 }
+                $this->prefixTestConnection();
                 ConnectionManager::get('test')->driver()->autoQuoting(true);
             },
             'No identifier quoting / Prefix' => function () {

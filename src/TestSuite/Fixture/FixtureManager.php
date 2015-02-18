@@ -374,6 +374,8 @@ class FixtureManager
                     $fixture->drop($db);
                 }
             }
+
+            $fixture->created = [];
         };
         $this->_runOperation(array_keys($this->_loaded), $shutdown);
     }

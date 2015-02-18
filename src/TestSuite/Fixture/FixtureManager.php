@@ -237,7 +237,10 @@ class FixtureManager
         try {
             $createTables = function ($db, $fixtures) use ($test) {
                 $tables = $db->schemaCollection()->listTables();
+                debug($tables);
                 foreach ($fixtures as $fixture) {
+                    debug($db->configName());
+                    debug($fixture->created);
                     if (!in_array($db->configName(), (array)$fixture->created)) {
                         $this->_setupTable($fixture, $db, $tables, $test->dropTables);
                     } else {

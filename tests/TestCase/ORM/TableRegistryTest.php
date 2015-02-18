@@ -183,32 +183,32 @@ class TableRegistryTest extends TestCase
     {
         $result = TableRegistry::get('Droids');
         $this->assertInstanceOf('Cake\ORM\Table', $result);
-        $this->assertEquals('droids', $result->table());
+        $this->assertEquals($this->applyConnectionPrefix('~droids'), $result->table());
         $this->assertEquals('Droids', $result->alias());
 
         $result = TableRegistry::get('R2D2', ['className' => 'Droids']);
         $this->assertInstanceOf('Cake\ORM\Table', $result);
-        $this->assertEquals('droids', $result->table(), 'The table should be derived from the className');
+        $this->assertEquals($this->applyConnectionPrefix('~droids'), $result->table(), 'The table should be derived from the className');
         $this->assertEquals('R2D2', $result->alias());
 
         $result = TableRegistry::get('C3P0', ['className' => 'Droids', 'table' => 'rebels']);
         $this->assertInstanceOf('Cake\ORM\Table', $result);
-        $this->assertEquals('rebels', $result->table(), 'The table should be taken from options');
+        $this->assertEquals($this->applyConnectionPrefix('~rebels'), $result->table(), 'The table should be taken from options');
         $this->assertEquals('C3P0', $result->alias());
 
         $result = TableRegistry::get('Funky.Chipmunks');
         $this->assertInstanceOf('Cake\ORM\Table', $result);
-        $this->assertEquals('chipmunks', $result->table(), 'The table should be derived from the alias');
+        $this->assertEquals($this->applyConnectionPrefix('~chipmunks'), $result->table(), 'The table should be derived from the alias');
         $this->assertEquals('Chipmunks', $result->alias());
 
         $result = TableRegistry::get('Awesome', ['className' => 'Funky.Monkies']);
         $this->assertInstanceOf('Cake\ORM\Table', $result);
-        $this->assertEquals('monkies', $result->table(), 'The table should be derived from the classname');
+        $this->assertEquals($this->applyConnectionPrefix('~monkies'), $result->table(), 'The table should be derived from the classname');
         $this->assertEquals('Awesome', $result->alias());
 
         $result = TableRegistry::get('Stuff', ['className' => 'Cake\ORM\Table']);
         $this->assertInstanceOf('Cake\ORM\Table', $result);
-        $this->assertEquals('stuff', $result->table(), 'The table should be derived from the alias');
+        $this->assertEquals($this->applyConnectionPrefix('~stuff'), $result->table(), 'The table should be derived from the alias');
         $this->assertEquals('Stuff', $result->alias());
     }
 

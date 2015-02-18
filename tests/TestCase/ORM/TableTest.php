@@ -578,8 +578,8 @@ class TableTest extends TestCase
         $Categories->hasMany('Children', ['foreignKey' => 'parent_id'] + $options);
         $Categories->belongsTo('Parent', $options);
 
-        $this->assertSame('categories', $Categories->Children->target()->table());
-        $this->assertSame('categories', $Categories->Parent->target()->table());
+        $this->assertSame($this->applyConnectionPrefix('~categories'), $Categories->Children->target()->table());
+        $this->assertSame($this->applyConnectionPrefix('~categories'), $Categories->Parent->target()->table());
 
         $this->assertSame('Children', $Categories->Children->alias());
         $this->assertSame('Children', $Categories->Children->target()->alias());
@@ -3751,7 +3751,7 @@ class TableTest extends TestCase
         $result = $articles->__debugInfo();
         $expected = [
             'registryAlias' => 'Foo.Articles',
-            'table' => 'articles',
+            'table' => $this->applyConnectionPrefix('~articles'),
             'alias' => 'Articles',
             'entityClass' => '\Cake\ORM\Entity',
             'associations' => [],

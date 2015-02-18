@@ -372,10 +372,13 @@ class FixtureManager
             foreach ($fixtures as $fixture) {
                 if (!empty($fixture->created) && in_array($connection, $fixture->created)) {
                     $fixture->drop($db);
+
+                    $index = array_search($connection, $fixture->created);
+                    if ($index !== false) {
+                        unset($fixture->created[$index]);
+                    }
                 }
             }
-
-            $fixture->created = [];
         };
         $this->_runOperation(array_keys($this->_loaded), $shutdown);
     }

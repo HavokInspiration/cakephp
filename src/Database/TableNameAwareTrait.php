@@ -48,16 +48,16 @@ trait TableNameAwareTrait
     {
         $prefix = $this->_tableNameSettings['prefix'];
 
-        if (is_string($tableNames) && $this->isTableNamePrefixed($tableNames) === false) {
+        if (is_string($tableNames) && $this->needsPrefix($tableNames) === true) {
             $tableNames = $this->prefixTableName($tableNames, $isFromOrJoin);
         } elseif (is_array($tableNames)) {
             foreach ($tableNames as $k => $tableName) {
-                if (is_string($tableName) && $this->isTableNamePrefixed($tableName, $isFromOrJoin) === false) {
+                if (is_string($tableName) && $this->needsPrefix($tableName, $isFromOrJoin) === true) {
                     $tableNames[$k] = $prefix . $tableName;
                 } elseif (is_array($tableName) &&
                           isset($tableName['table']) &&
                           is_string($tableName['table']) &&
-                          $this->isTableNamePrefixed($tableName['table'], $isFromOrJoin) === false
+                          $this->needsPrefix($tableName['table'], $isFromOrJoin) === true
                 ) {
                     $tableNames[$k]['table'] = $this->prefixTableName($tableName['table'], $isFromOrJoin);
                 }
@@ -77,7 +77,7 @@ trait TableNameAwareTrait
      */
     public function prefixTableName($tableName, $isFromOrJoin = false)
     {
-        if ($this->isTableNamePrefixed($tableName, $isFromOrJoin) === false) {
+        if ($this->needsPrefix($tableName, $isFromOrJoin) === true) {
             $tableName = $this->_tableNameSettings['prefix'] . $tableName;
         }
         return $tableName;
@@ -96,7 +96,7 @@ trait TableNameAwareTrait
         $quoteStrings = $this->_tableNameSettings['quoteStrings'];
 
         $prefixedFieldName = $fieldName;
-        if (is_string($fieldName) && !empty($tablesNames)) {
+        if ($this->needsPrefix($prefixedFieldName, false) && is_string($fieldName) && !empty($tablesNames)) {
             $lookAhead = implode('|', $tablesNames);
             $tableNamePattern = '([\w-]+)';
             $replacePattern = $prefix . '$1$2';
@@ -149,7 +149,8 @@ trait TableNameAwareTrait
 
         if ($prefix === '' ||
             strpos($tableName, $prefix) === false ||
-            $tableName === $prefix
+            $tableName === $prefix ||
+            empty($this->_tableNameSettings['tablesNames'])
         ) {
             return false;
         }
@@ -165,14 +166,12 @@ trait TableNameAwareTrait
         }
 
         if (strpos($tableName, $prefix) !== false) {
-            if (!empty($this->_tableNameSettings['tablesNames'])) {
-                $lookAhead = $prefix . implode('|', $this->_tableNameSettings['tablesNames']);
-                list($startQuote, $endQuote) = $this->_tableNameSettings['quoteStrings'];
-                if (!empty($startQuote) && strpos($tableName, $startQuote) === 0) {
-                    $lookAhead = $startQuote . '?' .
-                        implode($endQuote . '?|' . $startQuote . '?', $this->_tableNameSettings['tablesNames']) .
-                        $endQuote . '?';
-                }
+            $lookAhead = $prefix . implode('|', $this->_tableNameSettings['tablesNames']);
+            list($startQuote, $endQuote) = $this->_tableNameSettings['quoteStrings'];
+            if (!empty($startQuote) && strpos($tableName, $startQuote) === 0) {
+                $lookAhead = $startQuote . '?' .
+                    implode($endQuote . '?|' . $startQuote . '?', $this->_tableNameSettings['tablesNames']) .
+                    $endQuote . '?';
             }
 
             $wordPattern = $this->buildWordPattern();

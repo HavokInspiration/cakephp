@@ -46,18 +46,16 @@ trait TableNameAwareTrait
      */
     public function prefixTableNames($tableNames, $isFromOrJoin = false)
     {
-        $prefix = $this->_tableNameSettings['prefix'];
-
-        if (is_string($tableNames) && $this->needsPrefix($tableNames) === true) {
+        if (is_string($tableNames) && $this->isTableNamePrefixed($tableNames, $isFromOrJoin) === false) {
             $tableNames = $this->prefixTableName($tableNames, $isFromOrJoin);
         } elseif (is_array($tableNames)) {
             foreach ($tableNames as $k => $tableName) {
-                if (is_string($tableName) && $this->needsPrefix($tableName, $isFromOrJoin) === true) {
-                    $tableNames[$k] = $prefix . $tableName;
+                if (is_string($tableName) && $this->isTableNamePrefixed($tableName, $isFromOrJoin) === false) {
+                    $tableNames[$k] = $this->prefixTableName($tableName, $isFromOrJoin);
                 } elseif (is_array($tableName) &&
                           isset($tableName['table']) &&
                           is_string($tableName['table']) &&
-                          $this->needsPrefix($tableName['table'], $isFromOrJoin) === true
+                          $this->isTableNamePrefixed($tableName['table'], $isFromOrJoin) === false
                 ) {
                     $tableNames[$k]['table'] = $this->prefixTableName($tableName['table'], $isFromOrJoin);
                 }
@@ -77,14 +75,25 @@ trait TableNameAwareTrait
      */
     public function prefixTableName($tableName, $isFromOrJoin = false)
     {
-        if ($this->needsPrefix($tableName, $isFromOrJoin) === true) {
-            $tableName = $this->_tableNameSettings['prefix'] . $tableName;
+        if ($this->isTableNamePrefixed($tableName, $isFromOrJoin) === false) {
+            if (!empty($this->_tableNameSettings['quoteStrings'][0]) &&
+                strpos($tableName, $this->_tableNameSettings['quoteStrings'][0]) === 0
+            ) {
+                $tableName = $tableName[0] . $this->_tableNameSettings['prefix'] . substr($tableName, 1);
+            } else {
+                $tableName = $this->_tableNameSettings['prefix'] . $tableName;
+            }
         }
         return $tableName;
     }
 
     /**
      * Prefix table names in a SQL snippet (rather than in a single table name)
+     * As opposed to prefixTableNames() and prefixTableName(), this method needs to work
+     * with a regular expression as it is meant to prefix table name in expressions that
+     * could contain table aliases.
+     * This means that if you are to use this method, you must absolutely pass what are
+     * the table names to look for and prefix with the method setTableNameSettings()
      *
      * @param string $fieldName SQL snippet in which table name are to be found and prefixed
      * @return string
@@ -96,7 +105,7 @@ trait TableNameAwareTrait
         $quoteStrings = $this->_tableNameSettings['quoteStrings'];
 
         $prefixedFieldName = $fieldName;
-        if ($this->needsPrefix($prefixedFieldName, false) && is_string($fieldName) && !empty($tablesNames)) {
+        if (is_string($fieldName) && !empty($tablesNames) && $this->isTableNamePrefixed($fieldName) === false) {
             $lookAhead = implode('|', $tablesNames);
             $tableNamePattern = '([\w-]+)';
             $replacePattern = $prefix . '$1$2';
@@ -127,8 +136,11 @@ trait TableNameAwareTrait
     public function rawTableName($tableName)
     {
         $prefix = $this->_tableNameSettings['prefix'];
-        if ($prefix !== '' && strpos($tableName, $prefix) === 0) {
-            $tableName = substr($tableName, strlen($prefix));
+        $quoteStrings = $this->_tableNameSettings['quoteStrings'];
+
+        $offsetExpected = !empty($quoteStrings[0]) ? strlen($quoteStrings[0]) : 0;
+        if ($prefix !== '' && strpos($tableName, $prefix) === $offsetExpected) {
+            $tableName = str_replace($prefix, "", $tableName);
         }
 
         return $tableName;
@@ -149,8 +161,7 @@ trait TableNameAwareTrait
 
         if ($prefix === '' ||
             strpos($tableName, $prefix) === false ||
-            $tableName === $prefix ||
-            empty($this->_tableNameSettings['tablesNames'])
+            $tableName === $prefix
         ) {
             return false;
         }
@@ -166,12 +177,14 @@ trait TableNameAwareTrait
         }
 
         if (strpos($tableName, $prefix) !== false) {
-            $lookAhead = $prefix . implode('|', $this->_tableNameSettings['tablesNames']);
-            list($startQuote, $endQuote) = $this->_tableNameSettings['quoteStrings'];
-            if (!empty($startQuote) && strpos($tableName, $startQuote) === 0) {
-                $lookAhead = $startQuote . '?' .
-                    implode($endQuote . '?|' . $startQuote . '?', $this->_tableNameSettings['tablesNames']) .
-                    $endQuote . '?';
+            if (!empty($this->_tableNameSettings['tablesNames'])) {
+                $lookAhead = $prefix . implode('|', $this->_tableNameSettings['tablesNames']);
+                list($startQuote, $endQuote) = $this->_tableNameSettings['quoteStrings'];
+                if (!empty($startQuote) && strpos($tableName, $startQuote) === 0) {
+                    $lookAhead = $startQuote . '?' .
+                        implode($endQuote . '?|' . $startQuote . '?', $this->_tableNameSettings['tablesNames']) .
+                        $endQuote . '?';
+                }
             }
 
             $wordPattern = $this->buildWordPattern();

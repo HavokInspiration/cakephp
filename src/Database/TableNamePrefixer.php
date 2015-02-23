@@ -215,7 +215,7 @@ class TableNamePrefixer
         if (!empty($parts)) {
             foreach ($parts as $alias => $part) {
                 if ($this->hasTableName($part) === true) {
-                    $parts[$alias] = $this->prefixFieldName($part, $this->_getPrefix());
+                    $parts[$alias] = $this->prefixFieldName($part);
                 }
             }
 

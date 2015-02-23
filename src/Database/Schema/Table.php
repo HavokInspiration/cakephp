@@ -268,7 +268,15 @@ class Table
      */
     public function setTableNamePrefix($prefix = '')
     {
-        $this->setTableNamesSettings(['prefix' => $prefix]);
+        $this->setTableNamesSettings([
+            'prefix' => $prefix
+        ]);
+
+        if ($this->isTableNamePrefixed($this->_table, true) === false) {
+            $this->setTableNamesSettings([
+                'tablesNames' => [$this->_table => $this->_table]
+            ]);
+        }
         $this->_table = $this->prefixTableName($this->_table, true);
     }
 

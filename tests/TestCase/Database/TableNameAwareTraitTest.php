@@ -44,10 +44,9 @@ class TableNameAwareTraitTest extends TestCase
 
         $query = new Query($this->connection);
         $prefix = $this->connection->getPrefix();
-        $quoteStrings = $this->connection->driver()->getQuoteStrings();
         $query->setTableNamesSettings([
             'prefix' => $prefix,
-            'quoteStrings' => $quoteStrings
+            'quoteStrings' => ['', '']
         ]);
 
         $this->query = $query;
@@ -56,7 +55,6 @@ class TableNameAwareTraitTest extends TestCase
     public function tearDown()
     {
         parent::tearDown();
-        $this->connection->driver()->autoQuoting($this->autoQuote);
         unset($this->connection, $this->query, $this->autoQuote);
     }
 

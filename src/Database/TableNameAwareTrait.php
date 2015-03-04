@@ -1,5 +1,6 @@
 <?php
 namespace Cake\Database;
+use RuntimeException;
 
 /**
  * Trait that gathers methods needed to look for and manipulate
@@ -32,7 +33,22 @@ trait TableNameAwareTrait
      */
     public function setTableNamesSettings(array $settings = [])
     {
-        $this->_tableNameSettings = array_merge($this->_tableNameSettings, $settings);
+        if (isset($settings['prefix'])) {
+            $this->_tableNameSettings['prefix'] = $settings['prefix'];
+        }
+
+        if (isset($settings['quoteStrings']) && is_array($settings['quoteStrings']) && count($settings['quoteStrings']) === 2) {
+            $this->_tableNameSettings['quoteStrings'] = $settings['quoteStrings'];
+        }
+
+        if (isset($settings['tablesNames']) && is_array($settings['tablesNames'])) {
+            if (empty($settings['tablesNames'])) {
+                $settings['tablesNames'] = [];
+            } else {
+                $settings['tablesNames'] = array_map([$this, 'rawTableName'], $settings['tablesNames']);
+                $this->_tableNameSettings['tablesNames'] += $settings['tablesNames'];
+            }
+        }
     }
 
     /**
@@ -53,9 +69,9 @@ trait TableNameAwareTrait
                 if (is_string($tableName) && $this->isTableNamePrefixed($tableName, $isFromOrJoin) === false) {
                     $tableNames[$k] = $this->prefixTableName($tableName, $isFromOrJoin);
                 } elseif (is_array($tableName) &&
-                          isset($tableName['table']) &&
-                          is_string($tableName['table']) &&
-                          $this->isTableNamePrefixed($tableName['table'], $isFromOrJoin) === false
+                    isset($tableName['table']) &&
+                    is_string($tableName['table']) &&
+                    $this->isTableNamePrefixed($tableName['table'], $isFromOrJoin) === false
                 ) {
                     $tableNames[$k]['table'] = $this->prefixTableName($tableName['table'], $isFromOrJoin);
                 }
@@ -138,7 +154,7 @@ trait TableNameAwareTrait
         $prefix = $this->_tableNameSettings['prefix'];
         $quoteStrings = $this->_tableNameSettings['quoteStrings'];
 
-        $offsetExpected = !empty($quoteStrings[0]) ? strlen($quoteStrings[0]) : 0;
+        $offsetExpected = !empty($quoteStrings[0]) && strpos($tableName, $quoteStrings[0]) === 0 ? strlen($quoteStrings[0]) : 0;
         if ($prefix !== '' && strpos($tableName, $prefix) === $offsetExpected) {
             $tableName = str_replace($prefix, "", $tableName);
         }
@@ -176,15 +192,14 @@ trait TableNameAwareTrait
             return strpos($tableName, $prefix) === $expectedOffset;
         }
 
-        if (strpos($tableName, $prefix) !== false) {
-            if (!empty($this->_tableNameSettings['tablesNames'])) {
-                $lookAhead = $prefix . implode('|', $this->_tableNameSettings['tablesNames']);
-                list($startQuote, $endQuote) = $this->_tableNameSettings['quoteStrings'];
-                if (!empty($startQuote) && strpos($tableName, $startQuote) === 0) {
-                    $lookAhead = $startQuote . '?' .
-                        implode($endQuote . '?|' . $startQuote . '?', $this->_tableNameSettings['tablesNames']) .
-                        $endQuote . '?';
-                }
+        if (strpos($tableName, $prefix) !== false && !empty($this->_tableNameSettings['tablesNames'])) {
+            list($startQuote, $endQuote) = $this->_tableNameSettings['quoteStrings'];
+            if (!empty($startQuote)) {
+                $lookAhead = $startQuote . '?' .
+                    implode($endQuote . '?|' . $startQuote . '?', $this->_tableNameSettings['tablesNames']) .
+                    $endQuote . '?';
+            } else {
+                $lookAhead = implode('|', $this->_tableNameSettings['tablesNames']);
             }
 
             $wordPattern = $this->buildWordPattern();
@@ -192,8 +207,6 @@ trait TableNameAwareTrait
             $pattern = '/';
             if (isset($lookAhead)) {
                 $pattern .= '(?=(?:' . $lookAhead . '))(' . $wordPattern . ')';
-            } else {
-                $pattern .= '(' . $prefix . $wordPattern . ')';
             }
 
             if (strpos($tableName, '.') !== false) {
@@ -201,10 +214,14 @@ trait TableNameAwareTrait
             }
 
             $pattern .= '/';
+
             return preg_match_all($pattern, $tableName) > 0;
         }
 
-        return false;
+        throw new RuntimeException(sprintf(
+            'Cannot safely determine if `%s` is prefixed or not.',
+            $tableName
+        ));
     }
 
     /**
@@ -238,7 +255,7 @@ trait TableNameAwareTrait
     /**
      * Shortcut method that will consecutively do a hasTableName and a isTableNamePrefixed
      *
-     * @param string|array|ExpressionInterface $field String to check for table name
+     * @param string|array $field String to check for table name
      * @return bool
      */
     public function needsPrefix($field)

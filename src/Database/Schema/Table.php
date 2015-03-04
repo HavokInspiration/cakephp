@@ -276,8 +276,12 @@ class Table
             $this->setTableNamesSettings([
                 'tablesNames' => [$this->_table => $this->_table]
             ]);
+            $this->_table = $this->prefixTableName($this->_table, true);
+        } else {
+            $this->setTableNamesSettings([
+                'tablesNames' => [$this->_table => $this->_table]
+            ]);
         }
-        $this->_table = $this->prefixTableName($this->_table, true);
     }
 
     /**

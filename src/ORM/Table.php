@@ -346,6 +346,11 @@ class Table implements RepositoryInterface, EventListenerInterface
             $this->_table = Inflector::underscore($table);
             $this->_table = $this->prefixTableName($this->_table, true);
         }
+
+        $this->setTableNamesSettings([
+            'tablesNames' => [$this->rawTableName($this->_table) => $this->rawTableName($this->_table)]
+        ]);
+
         return $this->_table;
     }
 
@@ -1249,11 +1254,11 @@ class Table implements RepositoryInterface, EventListenerInterface
     {
         return (bool)count(
             $this->find('all')
-            ->select(['existing' => 1])
-            ->where($conditions)
-            ->limit(1)
-            ->hydrate(false)
-            ->toArray()
+                ->select(['existing' => 1])
+                ->where($conditions)
+                ->limit(1)
+                ->hydrate(false)
+                ->toArray()
         );
     }
 
@@ -1796,7 +1801,7 @@ class Table implements RepositoryInterface, EventListenerInterface
         } elseif ($hasOr !== false) {
             $fields = explode('_or_', $fields);
             $conditions = [
-            'OR' => $makeConditions($fields, $args)
+                'OR' => $makeConditions($fields, $args)
             ];
         } elseif ($hasAnd !== false) {
             $fields = explode('_and_', $fields);

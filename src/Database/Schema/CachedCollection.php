@@ -83,7 +83,10 @@ class CachedCollection extends Collection
     public function cacheKey($name)
     {
         if ($this->_connection->getPrefix() !== '') {
-            $this->setTableNamesSettings(['prefix' => $this->_connection->getPrefix()]);
+            $this->setTableNamesSettings([
+                'prefix' => $this->_connection->getPrefix(),
+                'tablesNames' => [$name => $name]
+            ]);
 
             if ($this->isTableNamePrefixed($name) === false) {
                 $name = $this->_connection->getPrefix() . $name;

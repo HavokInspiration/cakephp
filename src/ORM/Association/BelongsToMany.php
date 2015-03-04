@@ -981,9 +981,15 @@ class BelongsToMany extends Association
                 sort($aliases);
                 $this->_junctionTableName = implode('_', $aliases);
             }
+            $this->source()->setTableNamesSettings([
+                'tablesNames' => [$this->_junctionTableName => $this->_junctionTableName]
+            ]);
             $this->_junctionTableName = $this->source()->prefixTableName($this->_junctionTableName);
             return $this->_junctionTableName;
         }
+        $this->source()->setTableNamesSettings([
+            'tablesNames' => [$name => $name]
+        ]);
         return $this->_junctionTableName = $this->source()->prefixTableName($name);
     }
 

@@ -135,7 +135,6 @@ class TableNamePrefixer
     protected function _prefixIdentifierExpression(IdentifierExpression $expression)
     {
         $identifier = $expression->getIdentifier();
-        $prefix = $this->_getPrefix();
 
         if (is_string($identifier) &&
             strpos($identifier, '.') !== false &&

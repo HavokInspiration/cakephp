@@ -17,6 +17,7 @@ namespace Cake\Test\TestCase\Database;
 use Cake\Database\Query;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
+use RuntimeException;
 
 /**
  * Tests for the TableNameAwareTrait
@@ -75,7 +76,6 @@ class TableNameAwareTraitTest extends TestCase
         $this->assertFalse($query->needsPrefix('Function(prefix_articles.id)'));
         $this->assertFalse($query->needsPrefix('Function(SubFunction(articles.id))'));
         $this->assertFalse($query->needsPrefix('Function(SubFunction(prefix_articles.id))'));
-        $this->assertFalse($query->needsPrefix('articles.author_id = authors.id'));
 
         $query->setTableNamesSettings([
             'tablesNames' => ['articles' => 'articles']
@@ -104,12 +104,30 @@ class TableNameAwareTraitTest extends TestCase
         $this->assertEquals('prefix_articles', $query->prefixTableNames('articles', true));
         $this->assertEquals('prefix_articles', $query->prefixTableNames('prefix_articles', true));
         $this->assertEquals('prefix_articles', $query->prefixTableNames('articles', false));
-        $this->assertEquals('prefix_articles', $query->prefixTableNames('prefix_articles', false));
 
         $query->setTableNamesSettings([
             'quoteStrings' => ['"', '"']
         ]);
 
+        $this->assertEquals('"prefix_articles"', $query->prefixTableNames('"articles"', true));
+        $this->assertEquals('"prefix_articles"', $query->prefixTableNames('"prefix_articles"', true));
+        $this->assertEquals('prefix_articles', $query->prefixTableNames('articles', true));
+        $this->assertEquals('prefix_articles', $query->prefixTableNames('prefix_articles', true));
+        $this->assertEquals('"prefix_articles"', $query->prefixTableNames('"articles"', false));
+
+        $query->setTableNamesSettings([
+            'quoteStrings' => ['', ''],
+            'tablesNames' => ['articles' => 'articles']
+        ]);
+
+        $this->assertEquals('prefix_articles', $query->prefixTableNames('articles', true));
+        $this->assertEquals('prefix_articles', $query->prefixTableNames('prefix_articles', true));
+        $this->assertEquals('prefix_articles', $query->prefixTableNames('articles', false));
+        $this->assertEquals('prefix_articles', $query->prefixTableNames('prefix_articles', false));
+
+        $query->setTableNamesSettings([
+            'quoteStrings' => ['"', '"']
+        ]);
         $this->assertEquals('"prefix_articles"', $query->prefixTableNames('"articles"', true));
         $this->assertEquals('"prefix_articles"', $query->prefixTableNames('"prefix_articles"', true));
         $this->assertEquals('"prefix_articles"', $query->prefixTableNames('"articles"', false));
@@ -129,7 +147,6 @@ class TableNameAwareTraitTest extends TestCase
         $this->assertEquals(['prefix_articles', 'prefix_comments'], $query->prefixTableNames(['articles', 'comments'], true));
         $this->assertEquals(['prefix_articles', 'prefix_comments'], $query->prefixTableNames(['prefix_articles', 'prefix_comments'], true));
         $this->assertEquals(['prefix_articles', 'prefix_comments'], $query->prefixTableNames(['articles', 'comments'], false));
-        $this->assertEquals(['prefix_articles', 'prefix_comments'], $query->prefixTableNames(['prefix_articles', 'comments'], false));
 
         $query->setTableNamesSettings([
             'quoteStrings' => ['"', '"']
@@ -141,8 +158,32 @@ class TableNameAwareTraitTest extends TestCase
 
         $this->assertEquals(['"prefix_articles"', '"prefix_comments"'], $query->prefixTableNames(['"articles"', '"comments"'], false));
         $this->assertEquals(['prefix_articles', 'prefix_comments'], $query->prefixTableNames(['articles', 'comments'], false));
-        $this->assertEquals(['"prefix_articles"', '"prefix_comments"'], $query->prefixTableNames(['"prefix_articles"', '"prefix_comments"'], false));
+
+        $query->setTableNamesSettings([
+            'quoteStrings' => ['', ''],
+            'tablesNames' => ['articles' => 'articles']
+        ]);
+
+        $this->assertEquals(['prefix_articles', 'prefix_comments'], $query->prefixTableNames(['articles', 'comments'], true));
+        $this->assertEquals(['prefix_articles', 'prefix_comments'], $query->prefixTableNames(['prefix_articles', 'prefix_comments'], true));
+        $this->assertEquals(['prefix_articles', 'prefix_comments'], $query->prefixTableNames(['articles', 'comments'], false));
+
+        $query->setTableNamesSettings([
+            'quoteStrings' => ['"', '"']
+        ]);
+        $this->assertEquals(['"prefix_articles"', '"prefix_comments"'], $query->prefixTableNames(['"articles"', '"comments"'], true));
+        $this->assertEquals(['prefix_articles', 'prefix_comments'], $query->prefixTableNames(['articles', 'comments'], true));
+        $this->assertEquals(['"prefix_articles"', '"prefix_comments"'], $query->prefixTableNames(['"prefix_articles"', '"prefix_comments"'], true));
+        $this->assertEquals(['prefix_articles', 'prefix_comments'], $query->prefixTableNames(['prefix_articles', 'prefix_comments'], true));
+
+        $this->assertEquals(['"prefix_articles"', '"prefix_comments"'], $query->prefixTableNames(['"articles"', '"comments"'], false));
+        $this->assertEquals(['prefix_articles', 'prefix_prefix_comments'], $query->prefixTableNames(['prefix_articles', 'prefix_comments'], false));
+
+        $query->setTableNamesSettings([
+            'tablesNames' => ['comments' => 'comments']
+        ]);
         $this->assertEquals(['prefix_articles', 'prefix_comments'], $query->prefixTableNames(['prefix_articles', 'prefix_comments'], false));
+        $this->assertEquals(['"prefix_articles"', '"prefix_comments"'], $query->prefixTableNames(['"prefix_articles"', '"prefix_comments"'], false));
     }
 
     /**
@@ -263,24 +304,58 @@ class TableNameAwareTraitTest extends TestCase
         $this->assertTrue($query->isTableNamePrefixed('prefix_articles.id', true));
         $this->assertFalse($query->isTableNamePrefixed('articles', true));
         $this->assertFalse($query->isTableNamePrefixed('articles.id', false));
-        $this->assertTrue($query->isTableNamePrefixed('prefix_articles.id', false));
         $this->assertFalse($query->isTableNamePrefixed('articles', false));
 
         $this->assertFalse($query->isTableNamePrefixed('Articles'));
         $this->assertFalse($query->isTableNamePrefixed('Function(SubFunction(articles.id))'));
-        $this->assertTrue($query->isTableNamePrefixed('Function(SubFunction(prefix_articles.id))'));
+
+        $query->setTableNamesSettings([
+            'tablesNames' => ['articles' => 'articles']
+        ]);
 
         $query->setTableNamesSettings([
             'quoteStrings' => ['"', '"']
         ]);
-        $this->assertFalse($query->isTableNamePrefixed('"articles"."id"', true));
-        $this->assertTrue($query->isTableNamePrefixed('"prefix_articles"."id"', true));
         $this->assertFalse($query->isTableNamePrefixed('"articles"', true));
-        $this->assertFalse($query->isTableNamePrefixed('"articles"."id"', false));
-        $this->assertTrue($query->isTableNamePrefixed('"prefix_articles"."id"', false));
-        $this->assertFalse($query->isTableNamePrefixed('"articles"', false));
+        $this->assertFalse($query->isTableNamePrefixed('"articles"."id"'));
+        $this->assertTrue($query->isTableNamePrefixed('"prefix_articles"."id"'));
+        $this->assertFalse($query->isTableNamePrefixed('"articles"'));
 
         $this->assertFalse($query->isTableNamePrefixed('Function(SubFunction("articles"."id"))'));
         $this->assertTrue($query->isTableNamePrefixed('Function(SubFunction("prefix_articles"."id"))'));
+    }
+
+    /**
+     * Data provider for convert column testing
+     *
+     * @return array
+     */
+    public static function impossibilityToCheckIfPrefixedProvider()
+    {
+        return [
+            ['prefix_articles'],
+            ['"prefix_articles"'],
+            [['prefix_articles', 'comments']],
+            [['"prefix_articles"', '"prefix_comments"']],
+            [['prefix_articles', 'prefix_comments']],
+            ['prefix_articles.id']
+        ];
+    }
+
+    /**
+     * Tests that trying to prefix a table name without specifying
+     * table names and by setting the $isFromOrJoin to true will
+     * throw an exception
+     *
+     * @dataProvider impossibilityToCheckIfPrefixedProvider
+     * @expectedException RuntimeException
+     * @expectedExceptionMessageRegExp #Cannot safely determine if `"?prefix_articles"?(\.id)?` is prefixed or not.#
+     * @return void
+     */
+    public function testImpossibilityToCheckIfPrefixed($tableName)
+    {
+        $query = $this->query;
+
+        $query->prefixTableNames($tableName, false);
     }
 }

@@ -440,12 +440,12 @@ class Query implements ExpressionInterface, IteratorAggregate
         }
         foreach ($tables as $alias => $table) {
             if (is_numeric($alias) && is_string($table)) {
-                if ($this->isTableNamePrefixed($table) === false) {
+                if ($this->isTableNamePrefixed($table, true) === false) {
                     $this->tablesNames[$table] = $table;
-                    $this->setTableNamesSettings(['tablesNames' => $this->tablesNames]);
                 }
             }
         }
+        $this->setTableNamesSettings(['tablesNames' => $this->tablesNames]);
         return $this;
     }
 
@@ -560,22 +560,22 @@ class Query implements ExpressionInterface, IteratorAggregate
                 $t['conditions'] = $this->newExpr()->add($t['conditions'], $types);
             }
 
-            if (is_string($t) && $this->isTableNamePrefixed($t) === false) {
+            if (is_string($t) && $this->isTableNamePrefixed($t, true) === false) {
                 $this->tablesNames[$t] = $t;
-                $this->setTableNamesSettings(['tablesNames' => $this->tablesNames]);
             } elseif (is_array($t) &&
                       empty($alias) &&
                       empty($t['alias']) &&
                       is_string($t['table']) &&
-                      $this->isTableNamePrefixed($t['table']) === false
+                      $this->isTableNamePrefixed($t['table'], true) === false
             ) {
                 $this->tablesNames[$t['table']] = $t['table'];
-                $this->setTableNamesSettings(['tablesNames' => $this->tablesNames]);
             }
 
             $alias = is_string($alias) ? $alias : null;
             $joins[$alias ?: $i++] = $t + ['type' => 'INNER', 'alias' => $alias];
         }
+
+        $this->setTableNamesSettings(['tablesNames' => $this->tablesNames]);
 
         if ($overwrite) {
             $this->_parts['join'] = $joins;
@@ -1290,6 +1290,8 @@ class Query implements ExpressionInterface, IteratorAggregate
         $this->_dirty();
         $this->_type = 'insert';
         $this->_parts['insert'][0] = $table;
+
+        $this->tablesNames[$table] = $table;
         return $this;
     }
 
@@ -1341,6 +1343,9 @@ class Query implements ExpressionInterface, IteratorAggregate
         $this->_dirty();
         $this->_type = 'update';
         $this->_parts['update'][0] = $table;
+
+        $this->tablesNames[$table] = $table;
+
         return $this;
     }
 

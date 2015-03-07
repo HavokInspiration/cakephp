@@ -16,6 +16,7 @@ namespace Cake\Database\Schema;
 
 use Cake\Database\Connection;
 use Cake\Database\Exception;
+use Cake\Database\TableNameAwareTrait;
 
 /**
  * Represents a single table in a database schema.
@@ -30,6 +31,8 @@ use Cake\Database\Exception;
  */
 class Table
 {
+
+    use TableNameAwareTrait;
 
     /**
      * The name of the table
@@ -254,6 +257,31 @@ class Table
     public function name()
     {
         return $this->_table;
+    }
+
+    /**
+     * Set the table name prefix to the $_table property
+     *
+     * @param string $prefix Prefix for the table name
+     *
+     * @return void
+     */
+    public function setTableNamePrefix($prefix = '')
+    {
+        $this->setTableNamesSettings([
+            'prefix' => $prefix
+        ]);
+
+        if ($this->isTableNamePrefixed($this->_table, true) === false) {
+            $this->setTableNamesSettings([
+                'tablesNames' => [$this->_table => $this->_table]
+            ]);
+            $this->_table = $this->prefixTableName($this->_table, true);
+        } else {
+            $this->setTableNamesSettings([
+                'tablesNames' => [$this->_table => $this->_table]
+            ]);
+        }
     }
 
     /**
@@ -539,6 +567,19 @@ class Table
     }
 
     /**
+     * Prefix a foreign key reference table name
+     *
+     * @param array $references Array where the first value is a table name
+     * that is used as a reference in a constraint SQL clause
+     * @return array
+     */
+    protected function _prefixForeignKeyReferences(array $references)
+    {
+        $references[0] = $this->prefixTableName($references[0], true);
+        return $references;
+    }
+
+    /**
      * Get the names of all the constraints in the table.
      *
      * @return array
@@ -607,13 +648,14 @@ class Table
      */
     public function createSql(Connection $connection)
     {
+        $this->setTableNamePrefix($connection->getPrefix());
         $dialect = $connection->driver()->schemaDialect();
         $columns = $constraints = $indexes = [];
         foreach (array_keys($this->_columns) as $name) {
             $columns[] = $dialect->columnSql($this, $name);
         }
         foreach (array_keys($this->_constraints) as $name) {
-            $constraints[] = $dialect->constraintSql($this, $name);
+            $constraints[] = $dialect->constraintSql($this, $name, $connection);
         }
         foreach (array_keys($this->_indexes) as $name) {
             $indexes[] = $dialect->indexSql($this, $name);
@@ -632,6 +674,7 @@ class Table
      */
     public function dropSql(Connection $connection)
     {
+        $this->setTableNamePrefix($connection->getPrefix());
         $dialect = $connection->driver()->schemaDialect();
         return $dialect->dropTableSql($this);
     }
@@ -644,6 +687,7 @@ class Table
      */
     public function truncateSql(Connection $connection)
     {
+        $this->setTableNamePrefix($connection->getPrefix());
         $dialect = $connection->driver()->schemaDialect();
         return $dialect->truncateTableSql($this);
     }

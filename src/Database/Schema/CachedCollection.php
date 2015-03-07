@@ -17,6 +17,7 @@ namespace Cake\Database\Schema;
 use Cake\Cache\Cache;
 use Cake\Database\Connection;
 use Cake\Database\Schema\Collection;
+use Cake\Database\TableNameAwareTrait;
 
 /**
  * Extends the schema collection class to provide caching
@@ -24,6 +25,8 @@ use Cake\Database\Schema\Collection;
  */
 class CachedCollection extends Collection
 {
+
+    use TableNameAwareTrait;
 
     /**
      * The name of the cache config key to use for caching table metadata,
@@ -79,6 +82,17 @@ class CachedCollection extends Collection
      */
     public function cacheKey($name)
     {
+        if ($this->_connection->getPrefix() !== '') {
+            $this->setTableNamesSettings([
+                'prefix' => $this->_connection->getPrefix(),
+                'tablesNames' => [$name => $name]
+            ]);
+
+            if ($this->isTableNamePrefixed($name) === false) {
+                $name = $this->_connection->getPrefix() . $name;
+            }
+        }
+
         return $this->_connection->configName() . '_' . $name;
     }
 

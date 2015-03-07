@@ -14,6 +14,7 @@
  */
 namespace Cake\Database\Schema;
 
+use Cake\Database\Connection;
 use Cake\Database\Exception;
 use Cake\Database\Schema\Table;
 
@@ -105,6 +106,7 @@ class SqliteSchema extends BaseSchema
      */
     public function describeColumnSql($tableName, $config)
     {
+        $tableName = $this->getFullTableName($tableName, $config);
         $sql = sprintf(
             'PRAGMA table_info(%s)',
             $this->_driver->quoteIdentifier($tableName)
@@ -142,6 +144,7 @@ class SqliteSchema extends BaseSchema
      */
     public function describeIndexSql($tableName, $config)
     {
+        $tableName = $this->getFullTableName($tableName, $config);
         $sql = sprintf(
             'PRAGMA index_list(%s)',
             $this->_driver->quoteIdentifier($tableName)
@@ -189,6 +192,7 @@ class SqliteSchema extends BaseSchema
      */
     public function describeForeignKeySql($tableName, $config)
     {
+        $tableName = $this->getFullTableName($tableName, $config);
         $sql = sprintf('PRAGMA foreign_key_list(%s)', $this->_driver->quoteIdentifier($tableName));
         return [$sql, []];
     }
@@ -282,7 +286,7 @@ class SqliteSchema extends BaseSchema
      * that integer primary keys be defined in the column definition.
      *
      */
-    public function constraintSql(Table $table, $name)
+    public function constraintSql(Table $table, $name, Connection $connection)
     {
         $data = $table->constraint($name);
         if ($data['type'] === Table::CONSTRAINT_PRIMARY &&
@@ -299,6 +303,7 @@ class SqliteSchema extends BaseSchema
             $type = 'UNIQUE';
         }
         if ($data['type'] === Table::CONSTRAINT_FOREIGN) {
+            $data['references'][0] = $this->getFullTableName($data['references'][0], $connection->config());
             $type = 'FOREIGN KEY';
             $clause = sprintf(
                 ' REFERENCES %s (%s) ON UPDATE %s ON DELETE %s',

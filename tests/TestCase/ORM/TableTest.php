@@ -30,6 +30,7 @@ use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
+use Cake\TestSuite\Traits\ConnectionPrefixTestTrait;
 use Cake\Validation\Validator;
 
 /**
@@ -46,6 +47,8 @@ class UsersTable extends Table
  */
 class TableTest extends TestCase
 {
+
+    use ConnectionPrefixTestTrait;
 
     public $fixtures = [
         'core.comments',
@@ -69,6 +72,7 @@ class TableTest extends TestCase
     {
         parent::setUp();
         $this->connection = ConnectionManager::get('test');
+        $this->setPrefix();
         Configure::write('App.namespace', 'TestApp');
 
         $this->usersTypeMap = new TypeMap([
@@ -574,8 +578,8 @@ class TableTest extends TestCase
         $Categories->hasMany('Children', ['foreignKey' => 'parent_id'] + $options);
         $Categories->belongsTo('Parent', $options);
 
-        $this->assertSame('categories', $Categories->Children->target()->table());
-        $this->assertSame('categories', $Categories->Parent->target()->table());
+        $this->assertSame($this->applyConnectionPrefix('~categories'), $Categories->Children->target()->table());
+        $this->assertSame($this->applyConnectionPrefix('~categories'), $Categories->Parent->target()->table());
 
         $this->assertSame('Children', $Categories->Children->alias());
         $this->assertSame('Children', $Categories->Children->target()->alias());
@@ -756,7 +760,7 @@ class TableTest extends TestCase
         $this->assertEquals(['b' => 'c'], $belongsToMany->conditions());
         $this->assertEquals(['foo' => 'asc'], $belongsToMany->sort());
         $this->assertSame($table, $belongsToMany->source());
-        $this->assertSame('things_tags', $belongsToMany->junction()->table());
+        $this->assertSame($this->applyConnectionPrefix('~things_tags'), $belongsToMany->junction()->table());
     }
 
     /**
@@ -800,7 +804,7 @@ class TableTest extends TestCase
         $belongsToMany = $associations->get('tags');
         $this->assertInstanceOf('Cake\ORM\Association\BelongsToMany', $belongsToMany);
         $this->assertEquals('tags', $belongsToMany->name());
-        $this->assertSame('things_tags', $belongsToMany->junction()->table());
+        $this->assertSame($this->applyConnectionPrefix('~things_tags'), $belongsToMany->junction()->table());
     }
 
     /**
@@ -1968,6 +1972,7 @@ class TableTest extends TestCase
      */
     public function testSaveNewErrorOnNoPrimaryKey()
     {
+        $this->skipIfConnectionPrefix();
         $entity = new \Cake\ORM\Entity(['username' => 'superuser']);
         $table = TableRegistry::get('users', [
             'schema' => [
@@ -3557,7 +3562,7 @@ class TableTest extends TestCase
         return [
             [
                 ['fields' => ['id'], 'cache' => 'default'],
-                'get:test.table_name[10]', 'default'
+                'get:test.~table_name[10]', 'default'
             ],
             [
                 ['fields' => ['id'], 'cache' => 'default', 'key' => 'custom_key'],
@@ -3577,6 +3582,8 @@ class TableTest extends TestCase
      */
     public function testGetWithCache($options, $cacheKey, $cacheConfig)
     {
+        $cacheKey = $this->applyConnectionPrefix($cacheKey);
+
         $table = $this->getMock(
             '\Cake\ORM\Table',
             ['callFinder', 'query'],
@@ -3625,6 +3632,7 @@ class TableTest extends TestCase
      */
     public function testGetNotFoundException()
     {
+        $this->skipIfConnectionPrefix();
         $table = new Table([
             'name' => 'Articles',
             'connection' => $this->connection,
@@ -3642,6 +3650,7 @@ class TableTest extends TestCase
      */
     public function testGetExceptionOnNoData()
     {
+        $this->skipIfConnectionPrefix();
         $table = new Table([
             'name' => 'Articles',
             'connection' => $this->connection,
@@ -3659,6 +3668,7 @@ class TableTest extends TestCase
      */
     public function testGetExceptionOnTooMuchData()
     {
+        $this->skipIfConnectionPrefix();
         $table = new Table([
             'name' => 'Articles',
             'connection' => $this->connection,
@@ -3727,7 +3737,7 @@ class TableTest extends TestCase
         $result = $articles->__debugInfo();
         $expected = [
             'registryAlias' => 'articles',
-            'table' => 'articles',
+            'table' => $this->applyConnectionPrefix('~articles'),
             'alias' => 'articles',
             'entityClass' => 'TestApp\Model\Entity\Article',
             'associations' => ['authors', 'tags', 'articlestags'],
@@ -3741,7 +3751,7 @@ class TableTest extends TestCase
         $result = $articles->__debugInfo();
         $expected = [
             'registryAlias' => 'Foo.Articles',
-            'table' => 'articles',
+            'table' => $this->applyConnectionPrefix('~articles'),
             'alias' => 'Articles',
             'entityClass' => '\Cake\ORM\Entity',
             'associations' => [],

@@ -25,6 +25,7 @@ use Cake\ORM\Query;
 use Cake\ORM\Table;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
+use Cake\TestSuite\Traits\ConnectionPrefixTestTrait;
 
 /**
  * Tests BelongsToMany class
@@ -32,6 +33,8 @@ use Cake\TestSuite\TestCase;
  */
 class BelongsToManyTest extends TestCase
 {
+
+    use ConnectionPrefixTestTrait;
 
     /**
      * Set up
@@ -41,10 +44,11 @@ class BelongsToManyTest extends TestCase
     public function setUp()
     {
         parent::setUp();
+        $this->setPrefix();
         $this->tag = $this->getMock(
             'Cake\ORM\Table',
             ['find', 'delete'],
-            [['alias' => 'Tags', 'table' => 'tags']]
+            [['alias' => 'Tags', 'table' => 'tags', 'connection' => ConnectionManager::get('test')]]
         );
         $this->tag->schema([
             'id' => ['type' => 'integer'],
@@ -56,7 +60,7 @@ class BelongsToManyTest extends TestCase
         $this->article = $this->getMock(
             'Cake\ORM\Table',
             ['find', 'delete'],
-            [['alias' => 'Articles', 'table' => 'articles']]
+            [['alias' => 'Articles', 'table' => 'articles', 'connection' => ConnectionManager::get('test')]]
         );
         $this->article->schema([
             'id' => ['type' => 'integer'],
@@ -154,7 +158,7 @@ class BelongsToManyTest extends TestCase
         $junction = $assoc->junction();
         $this->assertInstanceOf('Cake\ORM\Table', $junction);
         $this->assertEquals('ArticlesTags', $junction->alias());
-        $this->assertEquals('articles_tags', $junction->table());
+        $this->assertEquals($this->applyConnectionPrefix('~articles_tags'), $junction->table());
         $this->assertSame($this->article, $junction->association('Articles')->target());
         $this->assertSame($this->tag, $junction->association('Tags')->target());
 
@@ -193,7 +197,7 @@ class BelongsToManyTest extends TestCase
         ]);
         $junction = $assoc->junction();
         $this->assertEquals('TagsArticles', $junction->alias());
-        $this->assertEquals('tags_articles', $junction->table());
+        $this->assertEquals($this->applyConnectionPrefix('~tags_articles'), $junction->table());
     }
 
     /**

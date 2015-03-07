@@ -19,6 +19,7 @@ use Cake\ORM\Association;
 use Cake\ORM\Table;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
+use Cake\TestSuite\Traits\ConnectionPrefixTestTrait;
 
 /**
  * A Test double used to assert that default tables are created
@@ -45,6 +46,8 @@ class TestTable extends Table
 class AssociationTest extends TestCase
 {
 
+    use ConnectionPrefixTestTrait;
+
     /**
      * Set up
      *
@@ -53,6 +56,7 @@ class AssociationTest extends TestCase
     public function setUp()
     {
         parent::setUp();
+        $this->setPrefix();
         $this->source = new TestTable;
         $config = [
             'className' => '\Cake\Test\TestCase\ORM\TestTable',
@@ -207,7 +211,7 @@ class AssociationTest extends TestCase
         $plugin = TableRegistry::get('TestPlugin.ThisAssociationName');
         $this->assertSame($table, $plugin, 'Should be an instance of TestPlugin.Comments');
         $this->assertSame('TestPlugin.ThisAssociationName', $table->registryAlias());
-        $this->assertSame('comments', $table->table());
+        $this->assertSame($this->applyConnectionPrefix('~comments'), $table->table());
         $this->assertSame('ThisAssociationName', $table->alias());
     }
 

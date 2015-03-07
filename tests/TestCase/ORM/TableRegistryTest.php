@@ -20,6 +20,7 @@ use Cake\Datasource\ConnectionManager;
 use Cake\ORM\Table;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
+use Cake\TestSuite\Traits\ConnectionPrefixTestTrait;
 use Cake\Validation\Validator;
 
 /**
@@ -43,6 +44,8 @@ class MyUsersTable extends Table
 class TableRegistryTest extends TestCase
 {
 
+    use ConnectionPrefixTestTrait;
+
     /**
      * setup
      *
@@ -51,6 +54,7 @@ class TableRegistryTest extends TestCase
     public function setUp()
     {
         parent::setUp();
+        $this->setPrefix();
         Configure::write('App.namespace', 'TestApp');
     }
 
@@ -163,11 +167,11 @@ class TableRegistryTest extends TestCase
             'table' => 'my_articles',
         ]);
         $this->assertInstanceOf('Cake\ORM\Table', $result);
-        $this->assertEquals('my_articles', $result->table());
+        $this->assertEquals($this->applyConnectionPrefix('~my_articles'), $result->table());
 
         $result2 = TableRegistry::get('Articles');
         $this->assertSame($result, $result2);
-        $this->assertEquals('my_articles', $result->table());
+        $this->assertEquals($this->applyConnectionPrefix('~my_articles'), $result->table());
     }
 
     /**
@@ -179,32 +183,32 @@ class TableRegistryTest extends TestCase
     {
         $result = TableRegistry::get('Droids');
         $this->assertInstanceOf('Cake\ORM\Table', $result);
-        $this->assertEquals('droids', $result->table());
+        $this->assertEquals($this->applyConnectionPrefix('~droids'), $result->table());
         $this->assertEquals('Droids', $result->alias());
 
         $result = TableRegistry::get('R2D2', ['className' => 'Droids']);
         $this->assertInstanceOf('Cake\ORM\Table', $result);
-        $this->assertEquals('droids', $result->table(), 'The table should be derived from the className');
+        $this->assertEquals($this->applyConnectionPrefix('~droids'), $result->table(), 'The table should be derived from the className');
         $this->assertEquals('R2D2', $result->alias());
 
         $result = TableRegistry::get('C3P0', ['className' => 'Droids', 'table' => 'rebels']);
         $this->assertInstanceOf('Cake\ORM\Table', $result);
-        $this->assertEquals('rebels', $result->table(), 'The table should be taken from options');
+        $this->assertEquals($this->applyConnectionPrefix('~rebels'), $result->table(), 'The table should be taken from options');
         $this->assertEquals('C3P0', $result->alias());
 
         $result = TableRegistry::get('Funky.Chipmunks');
         $this->assertInstanceOf('Cake\ORM\Table', $result);
-        $this->assertEquals('chipmunks', $result->table(), 'The table should be derived from the alias');
+        $this->assertEquals($this->applyConnectionPrefix('~chipmunks'), $result->table(), 'The table should be derived from the alias');
         $this->assertEquals('Chipmunks', $result->alias());
 
         $result = TableRegistry::get('Awesome', ['className' => 'Funky.Monkies']);
         $this->assertInstanceOf('Cake\ORM\Table', $result);
-        $this->assertEquals('monkies', $result->table(), 'The table should be derived from the classname');
+        $this->assertEquals($this->applyConnectionPrefix('~monkies'), $result->table(), 'The table should be derived from the classname');
         $this->assertEquals('Awesome', $result->alias());
 
         $result = TableRegistry::get('Stuff', ['className' => 'Cake\ORM\Table']);
         $this->assertInstanceOf('Cake\ORM\Table', $result);
-        $this->assertEquals('stuff', $result->table(), 'The table should be derived from the alias');
+        $this->assertEquals($this->applyConnectionPrefix('~stuff'), $result->table(), 'The table should be derived from the alias');
         $this->assertEquals('Stuff', $result->alias());
     }
 
@@ -219,7 +223,7 @@ class TableRegistryTest extends TestCase
             'table' => 'my_articles',
         ]);
         $result = TableRegistry::get('Articles');
-        $this->assertEquals('my_articles', $result->table(), 'Should use config() data.');
+        $this->assertEquals($this->applyConnectionPrefix('~my_articles'), $result->table(), 'Should use config() data.');
     }
 
     /**
@@ -385,7 +389,7 @@ class TableRegistryTest extends TestCase
 
         $table = TableRegistry::get('users', ['table' => 'users']);
         $this->assertInstanceOf('Cake\ORM\Table', $table);
-        $this->assertEquals('users', $table->table());
+        $this->assertEquals($this->applyConnectionPrefix('~users'), $table->table());
         $this->assertEquals('users', $table->alias());
         $this->assertSame($connection, $table->connection());
         $this->assertEquals(array_keys($schema), $table->schema()->columns());

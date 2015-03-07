@@ -19,6 +19,7 @@ use Cake\Core\Exception\Exception;
 use Cake\Database\Connection;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\Fixture\TestFixture;
+use Cake\TestSuite\TestCase;
 use Cake\Utility\Inflector;
 
 /**
@@ -198,6 +199,10 @@ class FixtureManager
         }
 
         $table = $fixture->table;
+        $dbPrefix = $db->getPrefix();
+        if (is_string($dbPrefix) && $dbPrefix !== '') {
+            $table = $dbPrefix . $table;
+        }
         $exists = in_array($table, $sources);
 
         if ($drop && $exists) {
@@ -364,6 +369,11 @@ class FixtureManager
             foreach ($fixtures as $fixture) {
                 if (!empty($fixture->created) && in_array($connection, $fixture->created)) {
                     $fixture->drop($db);
+
+                    $index = array_search($connection, $fixture->created);
+                    if ($index !== false) {
+                        unset($fixture->created[$index]);
+                    }
                 }
             }
         };

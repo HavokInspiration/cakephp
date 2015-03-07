@@ -14,6 +14,7 @@
  */
 namespace Cake\Database\Schema;
 
+use Cake\Database\Connection;
 use Cake\Database\Exception;
 use Cake\Database\Schema\Table;
 
@@ -36,6 +37,7 @@ class MysqlSchema extends BaseSchema
      */
     public function describeColumnSql($tableName, $config)
     {
+        $tableName = $this->getFullTableName($tableName, $config);
         return ['SHOW FULL COLUMNS FROM ' . $this->_driver->quoteIdentifier($tableName), []];
     }
 
@@ -44,6 +46,7 @@ class MysqlSchema extends BaseSchema
      */
     public function describeIndexSql($tableName, $config)
     {
+        $tableName = $this->getFullTableName($tableName, $config);
         return ['SHOW INDEXES FROM ' . $this->_driver->quoteIdentifier($tableName), []];
     }
 
@@ -52,6 +55,7 @@ class MysqlSchema extends BaseSchema
      */
     public function describeOptionsSql($tableName, $config)
     {
+        $tableName = $this->getFullTableName($tableName, $config, false);
         return ['SHOW TABLE STATUS WHERE Name = ?', [$tableName]];
     }
 
@@ -220,6 +224,7 @@ class MysqlSchema extends BaseSchema
      */
     public function describeForeignKeySql($tableName, $config)
     {
+        $tableName = $this->getFullTableName($tableName, $config, false);
         $sql = 'SELECT * FROM information_schema.key_column_usage AS kcu
 			INNER JOIN information_schema.referential_constraints AS rc
 			ON (kcu.CONSTRAINT_NAME = rc.CONSTRAINT_NAME)
@@ -359,7 +364,7 @@ class MysqlSchema extends BaseSchema
     /**
      * {@inheritDoc}
      */
-    public function constraintSql(Table $table, $name)
+    public function constraintSql(Table $table, $name, Connection $connection)
     {
         $data = $table->constraint($name);
         if ($data['type'] === Table::CONSTRAINT_PRIMARY) {
@@ -374,6 +379,8 @@ class MysqlSchema extends BaseSchema
         }
         if ($data['type'] === Table::CONSTRAINT_FOREIGN) {
             $out = 'CONSTRAINT ';
+
+            $data['references'][0] = $this->getFullTableName($data['references'][0], $connection->config());
         }
         $out .= $this->_driver->quoteIdentifier($name);
         return $this->_keySql($out, $data);

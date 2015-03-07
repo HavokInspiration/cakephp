@@ -20,12 +20,21 @@ use Cake\Database\Schema\MysqlSchema;
 use Cake\Database\Schema\Table;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
+use Cake\TestSuite\Traits\ConnectionPrefixTestTrait;
 
 /**
  * Test case for Mysql Schema Dialect.
  */
 class MysqlSchemaTest extends TestCase
 {
+
+    use ConnectionPrefixTestTrait;
+
+    public function setUp()
+    {
+        parent::setUp();
+        $this->setPrefix();
+    }
 
     /**
      * Helper method for skipping tests that need a real connection.
@@ -189,12 +198,17 @@ class MysqlSchemaTest extends TestCase
      */
     protected function _createTables($connection)
     {
+        $prefix = $this->_getConnectionPrefix($connection);
+
         $this->_needsConnection();
+
         $connection->execute('DROP TABLE IF EXISTS schema_articles');
         $connection->execute('DROP TABLE IF EXISTS schema_authors');
+        $connection->execute($this->applyConnectionPrefix('DROP TABLE IF EXISTS ~schema_articles'));
+        $connection->execute($this->applyConnectionPrefix('DROP TABLE IF EXISTS ~schema_authors'));
 
         $table = <<<SQL
-CREATE TABLE schema_authors (
+CREATE TABLE {$prefix}schema_authors (
 id INT(11) PRIMARY KEY AUTO_INCREMENT,
 name VARCHAR(50),
 bio TEXT,
@@ -204,7 +218,7 @@ SQL;
         $connection->execute($table);
 
         $table = <<<SQL
-CREATE TABLE schema_articles (
+CREATE TABLE {$prefix}schema_articles (
 id BIGINT PRIMARY KEY AUTO_INCREMENT,
 title VARCHAR(20) COMMENT 'A title',
 body TEXT,
@@ -214,7 +228,7 @@ allow_comments TINYINT(1) DEFAULT 0,
 created DATETIME,
 KEY `author_idx` (`author_id`),
 UNIQUE KEY `length_idx` (`title`(4)),
-FOREIGN KEY `author_idx` (`author_id`) REFERENCES `schema_authors`(`id`) ON UPDATE CASCADE ON DELETE RESTRICT
+FOREIGN KEY `author_idx` (`author_id`) REFERENCES `{$prefix}schema_authors`(`id`) ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB COLLATE=utf8_general_ci
 SQL;
         $connection->execute($table);
@@ -234,8 +248,8 @@ SQL;
         $result = $schema->listTables();
 
         $this->assertInternalType('array', $result);
-        $this->assertContains('schema_articles', $result);
-        $this->assertContains('schema_authors', $result);
+        $this->assertContains($this->applyConnectionPrefix('~schema_articles'), $result);
+        $this->assertContains($this->applyConnectionPrefix('~schema_authors'), $result);
     }
 
     /**
@@ -332,6 +346,7 @@ SQL;
     public function testDescribeTableIndexes()
     {
         $connection = ConnectionManager::get('test');
+        $prefix = $connection->getPrefix();
         $this->_createTables($connection);
 
         $schema = new SchemaCollection($connection);
@@ -355,7 +370,7 @@ SQL;
             'schema_articles_ibfk_1' => [
                 'type' => 'foreign',
                 'columns' => ['author_id'],
-                'references' => ['schema_authors', 'id'],
+                'references' => [$prefix . 'schema_authors', 'id'],
                 'length' => [],
                 'update' => 'cascade',
                 'delete' => 'restrict',
@@ -363,7 +378,7 @@ SQL;
         ];
         $this->assertEquals($expected['primary'], $result->constraint('primary'));
         $this->assertEquals($expected['length_idx'], $result->constraint('length_idx'));
-        $this->assertEquals($expected['schema_articles_ibfk_1'], $result->constraint('schema_articles_ibfk_1'));
+        $this->assertEquals($expected['schema_articles_ibfk_1'], $result->constraint($prefix . 'schema_articles_ibfk_1'));
 
         $this->assertCount(1, $result->indexes());
         $expected = [
@@ -586,31 +601,31 @@ SQL;
                 'author_id_idx',
                 ['type' => 'foreign', 'columns' => ['author_id'], 'references' => ['authors', 'id']],
                 'CONSTRAINT `author_id_idx` FOREIGN KEY (`author_id`) ' .
-                'REFERENCES `authors` (`id`) ON UPDATE RESTRICT ON DELETE RESTRICT'
+                'REFERENCES `~authors` (`id`) ON UPDATE RESTRICT ON DELETE RESTRICT'
             ],
             [
                 'author_id_idx',
                 ['type' => 'foreign', 'columns' => ['author_id'], 'references' => ['authors', 'id'], 'update' => 'cascade'],
                 'CONSTRAINT `author_id_idx` FOREIGN KEY (`author_id`) ' .
-                'REFERENCES `authors` (`id`) ON UPDATE CASCADE ON DELETE RESTRICT'
+                'REFERENCES `~authors` (`id`) ON UPDATE CASCADE ON DELETE RESTRICT'
             ],
             [
                 'author_id_idx',
                 ['type' => 'foreign', 'columns' => ['author_id'], 'references' => ['authors', 'id'], 'update' => 'restrict'],
                 'CONSTRAINT `author_id_idx` FOREIGN KEY (`author_id`) ' .
-                'REFERENCES `authors` (`id`) ON UPDATE RESTRICT ON DELETE RESTRICT'
+                'REFERENCES `~authors` (`id`) ON UPDATE RESTRICT ON DELETE RESTRICT'
             ],
             [
                 'author_id_idx',
                 ['type' => 'foreign', 'columns' => ['author_id'], 'references' => ['authors', 'id'], 'update' => 'setNull'],
                 'CONSTRAINT `author_id_idx` FOREIGN KEY (`author_id`) ' .
-                'REFERENCES `authors` (`id`) ON UPDATE SET NULL ON DELETE RESTRICT'
+                'REFERENCES `~authors` (`id`) ON UPDATE SET NULL ON DELETE RESTRICT'
             ],
             [
                 'author_id_idx',
                 ['type' => 'foreign', 'columns' => ['author_id'], 'references' => ['authors', 'id'], 'update' => 'noAction'],
                 'CONSTRAINT `author_id_idx` FOREIGN KEY (`author_id`) ' .
-                'REFERENCES `authors` (`id`) ON UPDATE NO ACTION ON DELETE RESTRICT'
+                'REFERENCES `~authors` (`id`) ON UPDATE NO ACTION ON DELETE RESTRICT'
             ],
         ];
     }
@@ -632,7 +647,7 @@ SQL;
             'type' => 'integer',
         ])->addConstraint($name, $data);
 
-        $this->assertEquals($expected, $schema->constraintSql($table, $name));
+        $this->assertEquals($this->applyConnectionPrefix($expected), $schema->constraintSql($table, $name, ConnectionManager::get('test')));
     }
 
     /**
@@ -723,6 +738,12 @@ SQL;
         $connection->expects($this->any())->method('driver')
             ->will($this->returnValue($driver));
 
+        $testConnection = ConnectionManager::get('test');
+        $prefix = $this->_getConnectionPrefix($testConnection);
+
+        $connection->expects($this->any())->method('getPrefix')
+            ->will($this->returnValue($prefix));
+
         $table = (new Table('posts'))->addColumn('id', [
                 'type' => 'integer',
                 'null' => false
@@ -748,7 +769,7 @@ SQL;
             ]);
 
         $expected = <<<SQL
-CREATE TABLE `posts` (
+CREATE TABLE `{$prefix}posts` (
 `id` INTEGER NOT NULL AUTO_INCREMENT,
 `title` VARCHAR(255) NOT NULL COMMENT "The title",
 `body` TEXT,
@@ -793,6 +814,12 @@ SQL;
         $connection->expects($this->any())->method('driver')
             ->will($this->returnValue($driver));
 
+        $testConnection = ConnectionManager::get('test');
+        $prefix = $this->_getConnectionPrefix($testConnection);
+
+        $connection->expects($this->any())->method('getPrefix')
+            ->will($this->returnValue($prefix));
+
         $table = (new Table('articles_tags'))
             ->addColumn('article_id', [
                 'type' => 'integer',
@@ -808,7 +835,7 @@ SQL;
             ]);
 
         $expected = <<<SQL
-CREATE TABLE `articles_tags` (
+CREATE TABLE `{$prefix}articles_tags` (
 `article_id` INTEGER NOT NULL,
 `tag_id` INTEGER NOT NULL,
 PRIMARY KEY (`article_id`, `tag_id`)
@@ -834,7 +861,7 @@ SQL;
             ]);
 
         $expected = <<<SQL
-CREATE TABLE `composite_key` (
+CREATE TABLE `{$prefix}composite_key` (
 `id` INTEGER NOT NULL AUTO_INCREMENT,
 `account_id` INTEGER NOT NULL,
 PRIMARY KEY (`id`, `account_id`)
@@ -857,10 +884,16 @@ SQL;
         $connection->expects($this->any())->method('driver')
             ->will($this->returnValue($driver));
 
+        $testConnection = ConnectionManager::get('test');
+        $prefix = $this->_getConnectionPrefix($testConnection);
+
+        $connection->expects($this->any())->method('getPrefix')
+            ->will($this->returnValue($prefix));
+
         $table = new Table('articles');
         $result = $table->dropSql($connection);
         $this->assertCount(1, $result);
-        $this->assertEquals('DROP TABLE `articles`', $result[0]);
+        $this->assertEquals($this->applyConnectionPrefix('DROP TABLE `~articles`'), $result[0]);
     }
 
     /**
@@ -875,10 +908,16 @@ SQL;
         $connection->expects($this->any())->method('driver')
             ->will($this->returnValue($driver));
 
+        $testConnection = ConnectionManager::get('test');
+        $prefix = $this->_getConnectionPrefix($testConnection);
+
+        $connection->expects($this->any())->method('getPrefix')
+            ->will($this->returnValue($prefix));
+
         $table = new Table('articles');
         $result = $table->truncateSql($connection);
         $this->assertCount(1, $result);
-        $this->assertEquals('TRUNCATE TABLE `articles`', $result[0]);
+        $this->assertEquals($this->applyConnectionPrefix('TRUNCATE TABLE `~articles`'), $result[0]);
     }
 
     /**

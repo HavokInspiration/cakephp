@@ -23,6 +23,7 @@ use Cake\ORM\Query;
 use Cake\ORM\Table;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
+use Cake\TestSuite\Traits\ConnectionPrefixTestTrait;
 
 /**
  * Tests HasOne class
@@ -30,6 +31,8 @@ use Cake\TestSuite\TestCase;
  */
 class HasOneTest extends TestCase
 {
+
+    use ConnectionPrefixTestTrait;
 
     /**
      * Set up
@@ -39,6 +42,7 @@ class HasOneTest extends TestCase
     public function setUp()
     {
         parent::setUp();
+        $this->setPrefix();
         $this->user = TableRegistry::get('Users', [
             'schema' => [
                 'id' => ['type' => 'integer'],
@@ -114,7 +118,7 @@ class HasOneTest extends TestCase
                     ['Users.id' => $field],
                 ], $this->profilesTypeMap),
                 'type' => 'LEFT',
-                'table' => 'profiles'
+                'table' => $this->applyConnectionPrefix('~profiles')
             ]
         ]);
         $query->expects($this->once())->method('select')->with([
@@ -147,7 +151,7 @@ class HasOneTest extends TestCase
                     ['Users.id' => $field],
                 ], $this->profilesTypeMap),
                 'type' => 'LEFT',
-                'table' => 'profiles'
+                'table' => $this->applyConnectionPrefix('~profiles')
             ]
         ]);
         $query->expects($this->never())->method('select');
@@ -180,7 +184,7 @@ class HasOneTest extends TestCase
                     ['Users.id' => $field1, 'Users.site_id' => $field2],
                 ], $this->profilesTypeMap),
                 'type' => 'LEFT',
-                'table' => 'profiles'
+                'table' => $this->applyConnectionPrefix('~profiles')
             ]
         ]);
         $query->expects($this->never())->method('select');

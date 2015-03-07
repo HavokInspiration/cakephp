@@ -17,7 +17,9 @@ namespace Cake\ORM;
 use ArrayObject;
 use BadMethodCallException;
 use Cake\Core\App;
+use Cake\Database\Connection;
 use Cake\Database\Schema\Table as Schema;
+use Cake\Database\TableNameAwareTrait;
 use Cake\Database\Type;
 use Cake\Datasource\EntityInterface;
 use Cake\Datasource\Exception\InvalidPrimaryKeyException;
@@ -119,6 +121,7 @@ class Table implements RepositoryInterface, EventListenerInterface
 {
 
     use EventManagerTrait;
+    use TableNameAwareTrait;
 
     /**
      * Name of default validation set.
@@ -145,7 +148,7 @@ class Table implements RepositoryInterface, EventListenerInterface
     /**
      * Connection instance
      *
-     * @var \Cake\Database\Connection
+     * @var Connection
      */
     protected $_connection;
 
@@ -238,14 +241,18 @@ class Table implements RepositoryInterface, EventListenerInterface
         if (!empty($config['registryAlias'])) {
             $this->registryAlias($config['registryAlias']);
         }
+        if (!empty($config['connection'])) {
+            $this->connection($config['connection']);
+
+            if ($this->connection() instanceof Connection) {
+                $this->setTableNamesSettings(['prefix' => $this->connection()->getPrefix()]);
+            }
+        }
         if (!empty($config['table'])) {
             $this->table($config['table']);
         }
         if (!empty($config['alias'])) {
             $this->alias($config['alias']);
-        }
-        if (!empty($config['connection'])) {
-            $this->connection($config['connection']);
         }
         if (!empty($config['schema'])) {
             $this->schema($config['schema']);
@@ -263,6 +270,7 @@ class Table implements RepositoryInterface, EventListenerInterface
         if (!empty($config['associations'])) {
             $associations = $config['associations'];
         }
+
         if (!empty($config['validator'])) {
             if (!is_array($config['validator'])) {
                 $this->validator(static::DEFAULT_VALIDATOR, $config['validator']);
@@ -272,6 +280,7 @@ class Table implements RepositoryInterface, EventListenerInterface
                 }
             }
         }
+
         $this->_eventManager = $eventManager ?: new EventManager();
         $this->_behaviors = $behaviors ?: new BehaviorRegistry($this);
         $this->_associations = $associations ?: new AssociationCollection();
@@ -326,7 +335,7 @@ class Table implements RepositoryInterface, EventListenerInterface
     public function table($table = null)
     {
         if ($table !== null) {
-            $this->_table = $table;
+            $this->_table = $this->prefixTableName($table, true);
         }
         if ($this->_table === null) {
             $table = namespaceSplit(get_class($this));
@@ -335,7 +344,13 @@ class Table implements RepositoryInterface, EventListenerInterface
                 $table = $this->alias();
             }
             $this->_table = Inflector::underscore($table);
+            $this->_table = $this->prefixTableName($this->_table, true);
         }
+
+        $this->setTableNamesSettings([
+            'tablesNames' => [$this->rawTableName($this->_table) => $this->rawTableName($this->_table)]
+        ]);
+
         return $this->_table;
     }
 
@@ -352,7 +367,7 @@ class Table implements RepositoryInterface, EventListenerInterface
         }
         if ($this->_alias === null) {
             $alias = namespaceSplit(get_class($this));
-            $alias = substr(end($alias), 0, -5) ?: $this->_table;
+            $alias = substr(end($alias), 0, -5) ?: $this->rawTableName($this->_table);
             $this->_alias = $alias;
         }
         return $this->_alias;
@@ -378,8 +393,8 @@ class Table implements RepositoryInterface, EventListenerInterface
     /**
      * Returns the connection instance or sets a new one
      *
-     * @param \Cake\Database\Connection|null $conn The new connection instance
-     * @return \Cake\Database\Connection
+     * @param Connection|null $conn The new connection instance
+     * @return Connection
      */
     public function connection($conn = null)
     {
@@ -1239,11 +1254,11 @@ class Table implements RepositoryInterface, EventListenerInterface
     {
         return (bool)count(
             $this->find('all')
-            ->select(['existing' => 1])
-            ->where($conditions)
-            ->limit(1)
-            ->hydrate(false)
-            ->toArray()
+                ->select(['existing' => 1])
+                ->where($conditions)
+                ->limit(1)
+                ->hydrate(false)
+                ->toArray()
         );
     }
 
@@ -1786,7 +1801,7 @@ class Table implements RepositoryInterface, EventListenerInterface
         } elseif ($hasOr !== false) {
             $fields = explode('_or_', $fields);
             $conditions = [
-            'OR' => $makeConditions($fields, $args)
+                'OR' => $makeConditions($fields, $args)
             ];
         } elseif ($hasAnd !== false) {
             $fields = explode('_and_', $fields);

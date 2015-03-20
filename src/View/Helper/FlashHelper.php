@@ -57,6 +57,9 @@ class FlashHelper extends Helper
      * ]);
      * ```
      *
+     * If the $key contains a stack of messages, each messages will be rendered with
+     * their own parameters and returned as one string.
+     *
      * @param string $key The [Flash.]key you are rendering in the view.
      * @param array $options Additional options to use for the creation of this flash message.
      *    Supports the 'params', and 'element' keys that are used in the helper.
@@ -77,10 +80,46 @@ class FlashHelper extends Helper
                 $key
             ));
         }
+
+        if (is_numeric(key($flash))) {
+            $this->request->session()->delete("Flash.$key");
+            return $this->_renderStack($flash, $options);
+        }
+
         $flash = $options + $flash;
         $this->request->session()->delete("Flash.$key");
+        return $this->_render($flash);
+    }
 
+    /**
+     * Renders a single message by calling its element
+     *
+     * @param array $flash Flash message parameter
+     * @return string|void Rendered flash message or null if flash key does not exist
+     *   in session.
+     */
+    public function _render(array $flash)
+    {
         return $this->_View->element($flash['element'], $flash);
+    }
+
+    /**
+     * Renders the given stack of messages
+     *
+     * @param array $messages Messages to render
+     * @param array $options Additional options to use for the creation of this flash message.
+     *    Supports the 'params', and 'element' keys that are used in the helper.
+     * @return string The full stack rendered as a string
+     */
+    protected function _renderStack(array $messages, array $options = [])
+    {
+        $out = '';
+        foreach ($messages as $message) {
+            $message = $options + $message;
+            $out .= $this->_render($message);
+        }
+
+        return $out;
     }
 
     /**

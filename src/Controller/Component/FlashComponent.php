@@ -42,7 +42,8 @@ class FlashComponent extends Component
     protected $_defaultConfig = [
         'key' => 'flash',
         'element' => 'default',
-        'params' => []
+        'params' => [],
+        'stacking' => false
     ];
 
     /**
@@ -91,7 +92,23 @@ class FlashComponent extends Component
             $options['element'] = 'Flash/' . $element;
         }
 
-        $this->_session->write('Flash.' . $options['key'], [
+        $sessionKey = 'Flash.' . $options['key'];
+        if ($this->config('stacking') === true) {
+            $messages = $this->_session->read($sessionKey);
+
+            if (is_null($messages)) {
+                $index = 0;
+            } elseif (is_array($messages) && !is_numeric(key($messages))) {
+                $this->_session->delete($sessionKey);
+                $this->_session->write($sessionKey . '.0', $messages);
+                $index = 1;
+            } else {
+                $index = count($messages);
+            }
+
+            $sessionKey .= '.' . $index;
+        }
+        $this->_session->write($sessionKey, [
             'message' => $message,
             'key' => $options['key'],
             'element' => $options['element'],

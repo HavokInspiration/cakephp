@@ -149,6 +149,70 @@ class FlashComponentTest extends TestCase
     }
 
     /**
+     * Tests that set() can stack messages
+     *
+     * @return void
+     */
+    public function testSetWithStacking()
+    {
+        $this->assertNull($this->Session->read('Flash.flash'));
+
+        $this->Flash->config('stacking', true);
+
+        $this->Flash->set('This is a test message');
+        $this->Flash->set('This is another test message');
+
+        $expected = [
+            [
+                'message' => 'This is a test message',
+                'key' => 'flash',
+                'element' => 'Flash/default',
+                'params' => []
+            ],
+            [
+                'message' => 'This is another test message',
+                'key' => 'flash',
+                'element' => 'Flash/default',
+                'params' => []
+            ]
+        ];
+        $result = $this->Session->read('Flash.flash');
+        $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * Tests that set() can stack messages after a first message
+     * has already been set
+     *
+     * @return void
+     */
+    public function testSetWithLateStacking()
+    {
+        $this->assertNull($this->Session->read('Flash.flash'));
+
+        $this->Flash->set('This is a test message');
+        $this->Flash->config('stacking', true);
+        $this->Flash->set('This is another test message');
+
+        $expected = [
+            [
+                'message' => 'This is a test message',
+                'key' => 'flash',
+                'element' => 'Flash/default',
+                'params' => []
+            ],
+            [
+                'message' => 'This is another test message',
+                'key' => 'flash',
+                'element' => 'Flash/default',
+                'params' => []
+            ]
+        ];
+        $result = $this->Session->read('Flash.flash');
+        $this->assertEquals($expected, $result);
+    }
+
+    /**
      * Test magic call method.
      *
      * @covers \Cake\Controller\Component\FlashComponent::__call
@@ -186,6 +250,85 @@ class FlashComponentTest extends TestCase
             'key' => 'flash',
             'element' => 'MyPlugin.Flash/success',
             'params' => []
+        ];
+        $result = $this->Session->read('Flash.flash');
+        $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * Test magic call method with stacking enabled.
+     *
+     * @covers \Cake\Controller\Component\FlashComponent::__call
+     * @return void
+     */
+    public function testCallWithStacking()
+    {
+        $this->assertNull($this->Session->read('Flash.flash'));
+
+        $this->Flash->config('stacking', true);
+        $this->Flash->success('It worked');
+        $this->Flash->error('It did not work');
+        $this->Flash->warning('Something unexpected occurred', ['plugin' => 'MyPlugin']);
+
+        $expected = [
+            [
+                'message' => 'It worked',
+                'key' => 'flash',
+                'element' => 'Flash/success',
+                'params' => []
+            ],
+            [
+                'message' => 'It did not work',
+                'key' => 'flash',
+                'element' => 'Flash/error',
+                'params' => []
+            ],
+            [
+                'message' => 'Something unexpected occurred',
+                'key' => 'flash',
+                'element' => 'MyPlugin.Flash/warning',
+                'params' => []
+            ]
+        ];
+        $result = $this->Session->read('Flash.flash');
+        $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * Test magic call method with stacking enabled after a message
+     * has already been set.
+     *
+     * @covers \Cake\Controller\Component\FlashComponent::__call
+     * @return void
+     */
+    public function testCallWithLateStacking()
+    {
+        $this->assertNull($this->Session->read('Flash.flash'));
+
+        $this->Flash->success('It worked');
+        $this->Flash->config('stacking', true);
+        $this->Flash->error('It did not work');
+        $this->Flash->warning('Something unexpected occurred', ['plugin' => 'MyPlugin']);
+
+        $expected = [
+            [
+                'message' => 'It worked',
+                'key' => 'flash',
+                'element' => 'Flash/success',
+                'params' => []
+            ],
+            [
+                'message' => 'It did not work',
+                'key' => 'flash',
+                'element' => 'Flash/error',
+                'params' => []
+            ],
+            [
+                'message' => 'Something unexpected occurred',
+                'key' => 'flash',
+                'element' => 'MyPlugin.Flash/warning',
+                'params' => []
+            ]
         ];
         $result = $this->Session->read('Flash.flash');
         $this->assertEquals($expected, $result);

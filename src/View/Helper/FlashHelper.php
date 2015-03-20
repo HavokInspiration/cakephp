@@ -26,7 +26,16 @@ class FlashHelper extends Helper
 {
 
     /**
-     * Used to render the message set in FlashComponent::set()
+     * Default config for the helper.
+     *
+     * @var array
+     */
+    protected $_defaultConfig = [
+        'stackElement' => false
+    ];
+
+    /**
+     * Used to render the message (or the stack of messages) set in FlashComponent::set()
      *
      * In your view: $this->Flash->render('somekey');
      * Will default to flash if no param is passed
@@ -117,6 +126,10 @@ class FlashHelper extends Helper
         foreach ($messages as $message) {
             $message = $options + $message;
             $out .= $this->_render($message);
+        }
+
+        if (!empty($this->config('stackElement'))) {
+            $out = $this->_View->element($this->config('stackElement'), ['messages' => $out]);
         }
 
         return $out;

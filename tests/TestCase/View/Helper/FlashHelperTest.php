@@ -213,4 +213,29 @@ class FlashHelperTest extends TestCase
         ];
         $this->assertHtml($expected, $result);
     }
+
+    /**
+     * Test that when rendering a stack, messages are displayed in their
+     * respective element, in the order they were added in the stack, inside
+     * the stackElement defined
+     *
+     * @return void
+     */
+    public function testFlashWithStackAndStackTemplate()
+    {
+        $this->Flash->config(['stackElement' => 'flash_stack']);
+        $result = $this->Flash->render('stack');
+        $expected = [
+            ['div' => ['class' => 'flash-stack']],
+            ['div' => ['class' => 'message']], 'This is a calling', '/div',
+            ['div' => ['id' => 'notificationLayout']],
+            '<h1', 'Alert!', '/h1',
+            '<h3', 'Notice!', '/h3',
+            '<p', 'This is a test of the emergency broadcasting system', '/p',
+            '/div',
+            ['div' => ['id' => 'classy-message']], 'Recorded', '/div',
+            '/div'
+        ];
+        $this->assertHtml($expected, $result);
+    }
 }

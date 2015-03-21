@@ -43,7 +43,10 @@ class FlashComponent extends Component
         'key' => 'flash',
         'element' => 'default',
         'params' => [],
-        'stacking' => false
+        'stacking' => [
+            'enabled' => false,
+            'limit' => 50
+        ]
     ];
 
     /**
@@ -93,7 +96,7 @@ class FlashComponent extends Component
         }
 
         $sessionKey = 'Flash.' . $options['key'];
-        if ($this->config('stacking') === true) {
+        if ($this->config('stacking.enabled') === true) {
             $messages = $this->_session->read($sessionKey);
 
             if (is_null($messages)) {
@@ -104,6 +107,12 @@ class FlashComponent extends Component
                 $index = 1;
             } else {
                 $index = count($messages);
+            }
+
+            if ($index >= $this->config('stacking.limit')) {
+                array_shift($messages);
+                $this->_session->write($sessionKey, $messages);
+                $index--;
             }
 
             $sessionKey .= '.' . $index;

@@ -157,7 +157,7 @@ class FlashComponentTest extends TestCase
     {
         $this->assertNull($this->Session->read('Flash.flash'));
 
-        $this->Flash->config('stacking', true);
+        $this->Flash->config('stacking.enabled', true);
 
         $this->Flash->set('This is a test message');
         $this->Flash->set('This is another test message');
@@ -191,7 +191,7 @@ class FlashComponentTest extends TestCase
         $this->assertNull($this->Session->read('Flash.flash'));
 
         $this->Flash->set('This is a test message');
-        $this->Flash->config('stacking', true);
+        $this->Flash->config('stacking.enabled', true);
         $this->Flash->set('This is another test message');
 
         $expected = [
@@ -209,6 +209,42 @@ class FlashComponentTest extends TestCase
             ]
         ];
         $result = $this->Session->read('Flash.flash');
+        $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * Tests that set() can stack messages after a first message
+     * has already been set
+     *
+     * @return void
+     */
+    public function testSetWithStackingLimit()
+    {
+        $this->assertNull($this->Session->read('Flash.flash'));
+
+        $this->Flash->config('stacking', ['enabled' => true, 'limit' => 2]);
+
+        $this->Flash->set('This is a test message');
+        $this->Flash->set('This is another test message');
+        $this->assertEquals(2, count($this->Session->read('Flash.flash')));
+
+        $this->Flash->set('This is a third test message');
+        $result = $this->Session->read('Flash.flash');
+        $this->assertEquals(2, count($result));
+        $expected = [
+            [
+                'message' => 'This is another test message',
+                'key' => 'flash',
+                'element' => 'Flash/default',
+                'params' => []
+            ],
+            [
+                'message' => 'This is a third test message',
+                'key' => 'flash',
+                'element' => 'Flash/default',
+                'params' => []
+            ]
+        ];
         $this->assertEquals($expected, $result);
     }
 
@@ -265,7 +301,7 @@ class FlashComponentTest extends TestCase
     {
         $this->assertNull($this->Session->read('Flash.flash'));
 
-        $this->Flash->config('stacking', true);
+        $this->Flash->config('stacking.enabled', true);
         $this->Flash->success('It worked');
         $this->Flash->error('It did not work');
         $this->Flash->warning('Something unexpected occurred', ['plugin' => 'MyPlugin']);
@@ -306,7 +342,7 @@ class FlashComponentTest extends TestCase
         $this->assertNull($this->Session->read('Flash.flash'));
 
         $this->Flash->success('It worked');
-        $this->Flash->config('stacking', true);
+        $this->Flash->config('stacking.enabled', true);
         $this->Flash->error('It did not work');
         $this->Flash->warning('Something unexpected occurred', ['plugin' => 'MyPlugin']);
 

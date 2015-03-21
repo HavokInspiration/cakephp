@@ -212,6 +212,7 @@ class FlashHelperTest extends TestCase
             ['div' => ['id' => 'classy-message']], 'Recorded', '/div'
         ];
         $this->assertHtml($expected, $result);
+        $this->assertNull($this->View->request->session()->read('Flash.stack'));
     }
 
     /**
@@ -237,5 +238,6 @@ class FlashHelperTest extends TestCase
             '/div'
         ];
         $this->assertHtml($expected, $result);
+        $this->assertNull($this->View->request->session()->read('Flash.stack'));
     }
 }

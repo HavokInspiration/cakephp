@@ -42,7 +42,11 @@ class FlashComponent extends Component
     protected $_defaultConfig = [
         'key' => 'flash',
         'element' => 'default',
-        'params' => []
+        'params' => [],
+        'stacking' => [
+            'enabled' => false,
+            'limit' => 50
+        ]
     ];
 
     /**
@@ -72,7 +76,8 @@ class FlashComponent extends Component
      *   of \Exception the exception message will be used and code will be set
      *   in params.
      * @param array $options An array of options
-     * @return void
+     * @return null|int If stacking is disabled, will return null. Otherwise, it will return the
+     * last inserted index to the stack
      */
     public function set($message, array $options = [])
     {
@@ -91,12 +96,108 @@ class FlashComponent extends Component
             $options['element'] = 'Flash/' . $element;
         }
 
-        $this->_session->write('Flash.' . $options['key'], [
+        $sessionKey = 'Flash.' . $options['key'];
+        if ($this->config('stacking.enabled') === true) {
+            $messages = $this->_session->read($sessionKey);
+
+            if ($messages === null) {
+                $index = 0;
+            } elseif (is_array($messages) && !is_numeric(key($messages))) {
+                $this->_session->delete($sessionKey);
+                $this->_session->write($sessionKey . '.0', $messages);
+                $index = 1;
+            } else {
+                end($messages);
+                $index = key($messages);
+                reset($messages);
+                $index++;
+            }
+
+            if ($index >= $this->config('stacking.limit')) {
+                array_shift($messages);
+                $this->_session->write($sessionKey, $messages);
+                $index--;
+            }
+
+            $sessionKey .= '.' . $index;
+        }
+        $this->_session->write($sessionKey, [
             'message' => $message,
             'key' => $options['key'],
             'element' => $options['element'],
             'params' => $options['params']
         ]);
+
+        return isset($index) ? $index : null;
+    }
+
+    /**
+     * Delete a message from the session
+     * If there are no remaining messages (in case of a stack), the stack
+     * array is nulled
+     *
+     * @param string $key The flash key where the message is stored
+     * @param null|string $index The index of the message to delete
+     * @return void
+     */
+    public function delete($key = '', $index = null)
+    {
+        if (empty($key)) {
+            $key = $this->config('key');
+        }
+
+        $sessionKey = $noIndexKey = 'Flash.' . $key;
+        if ($index !== null) {
+            $sessionKey .= '.' . $index;
+        }
+
+        if ($this->_session->check($sessionKey)) {
+            $this->_session->delete($sessionKey);
+        }
+
+        $remaining = $this->_session->read($noIndexKey);
+        if (is_array($remaining) && empty($remaining)) {
+            $this->_session->delete($noIndexKey);
+        }
+    }
+
+    /**
+     * Delete all messages from a special type
+     *
+     * @param string $type The type of message to clear
+     * @param string $key The flash key where the message is stored
+     * @return void
+     */
+    public function clear($type, $key = '')
+    {
+        if (empty($key)) {
+            $key = $this->config('key');
+        }
+
+        $messages = $this->_session->read('Flash.' . $key);
+        if (!is_numeric(key($messages)) && $this->_hasType($messages, $type)) {
+            $this->delete($key);
+        } else {
+            foreach ($messages as $index => $message) {
+                if ($this->_hasType($message, $type)) {
+                    $this->delete($key, $index);
+                }
+            }
+        }
+    }
+
+    /**
+     * Check if the given $message is of type $type
+     *
+     * @param array $message Flash message array to test the type of
+     * @param string $type Type of message to test against
+     * @return bool
+     */
+    protected function _hasType(array $message, $type)
+    {
+        $elementParts = explode('/', $message['element']);
+        $messageType = end($elementParts);
+        return $messageType === $type;
     }
 
     /**
@@ -115,7 +216,8 @@ class FlashComponent extends Component
      *
      * @param string $name Element name to use.
      * @param array $args Parameters to pass when calling `FlashComponent::set()`.
-     * @return void
+     * @return null|int If stacking is disabled, will return null. Otherwise, it will return the
+     * last inserted index to the stack
      * @throws \Cake\Network\Exception\InternalErrorException If missing the flash message.
      */
     public function __call($name, $args)
@@ -136,6 +238,6 @@ class FlashComponent extends Component
             $options += (array)$args[1];
         }
 
-        $this->set($args[0], $options);
+        return $this->set($args[0], $options);
     }
 }

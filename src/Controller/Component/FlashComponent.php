@@ -100,7 +100,7 @@ class FlashComponent extends Component
         if ($this->config('stacking.enabled') === true) {
             $messages = $this->_session->read($sessionKey);
 
-            if (is_null($messages)) {
+            if ($messages === null) {
                 $index = 0;
             } elseif (is_array($messages) && !is_numeric(key($messages))) {
                 $this->_session->delete($sessionKey);

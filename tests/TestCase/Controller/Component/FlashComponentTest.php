@@ -321,6 +321,10 @@ class FlashComponentTest extends TestCase
         $result = $this->Session->read('Flash.flash');
         $this->assertEquals(3, $newThirdIndex);
         $this->assertEquals($expected, $result);
+
+        $this->Flash->delete();
+        $result = $this->Session->read('Flash.flash');
+        $this->assertNull($result);
     }
 
     /**

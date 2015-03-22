@@ -279,6 +279,58 @@ class FlashComponentTest extends TestCase
     }
 
     /**
+     * Tests that clear() can remove all of the flash messages
+     * of the same type when flash are set with a magic call
+     *
+     * @return void
+     */
+    public function testClear()
+    {
+        $this->assertNull($this->Session->read('Flash.flash'));
+        $this->Flash->set('This is a test message');
+        $this->Flash->clear('default');
+        $this->assertNull($this->Session->read('Flash.flash'));
+
+        $this->Flash->config('stacking', ['enabled' => true]);
+        $this->Flash->set('This is a test message', ['element' => 'test']);
+        $this->Flash->set('This is another test message', ['element' => 'success']);
+        $this->Flash->set('This is a third test message', ['element' => 'success']);
+        $this->Flash->set('This is a test message with another key', ['element' => 'success', 'key' => 'mykey']);
+        $this->Flash->set('This is second test message with another key', ['element' => 'success', 'key' => 'mykey']);
+        $this->Flash->clear('success');
+
+        $expected = [
+            0 => [
+                'message' => 'This is a test message',
+                'key' => 'flash',
+                'element' => 'Flash/test',
+                'params' => []
+            ]
+        ];
+        $result = $this->Session->read('Flash.flash');
+        $this->assertEquals($expected, $result);
+
+        $expected = [
+            0 => [
+                'message' => 'This is a test message with another key',
+                'key' => 'mykey',
+                'element' => 'Flash/success',
+                'params' => []
+            ],
+            1 => [
+                'message' => 'This is second test message with another key',
+                'key' => 'mykey',
+                'element' => 'Flash/success',
+                'params' => []
+            ]
+        ];
+        $result = $this->Session->read('Flash.mykey');
+        $this->assertEquals($expected, $result);
+        $this->Flash->clear('success', 'mykey');
+        $this->assertNull($this->Session->read('Flash.mykey'));
+    }
+
+    /**
      * Tests that delete() can remove flash messages from a stack
      *
      * @return void
@@ -323,6 +375,31 @@ class FlashComponentTest extends TestCase
         $this->assertEquals($expected, $result);
 
         $this->Flash->delete();
+        $result = $this->Session->read('Flash.flash');
+        $this->assertNull($result);
+    }
+
+    /**
+     * Tests that delete() can remove flash messages from a stack
+     *
+     * @return void
+     */
+    public function testDeleteAllWithStacking()
+    {
+        $this->assertNull($this->Session->read('Flash.flash'));
+
+        $this->Flash->config('stacking', ['enabled' => true]);
+        $firstIndex = $this->Flash->set('This is a test message');
+        $secondIndex = $this->Flash->set('This is another test message');
+        $thirdIndex = $this->Flash->set('This is a third test message');
+
+        $this->Flash->delete('', $firstIndex);
+        $this->Flash->delete('', $secondIndex);
+
+        $result = $this->Session->read('Flash.flash');
+        $this->assertEquals(1, count($result));
+
+        $this->Flash->delete('', $thirdIndex);
         $result = $this->Session->read('Flash.flash');
         $this->assertNull($result);
     }
@@ -501,6 +578,45 @@ class FlashComponentTest extends TestCase
         ];
         $result = $this->Session->read('Flash.flash');
         $this->assertEquals(3, $newThirdIndex);
+        $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * Tests that clear() can remove all of the flash messages
+     * of the same type when flash are set with a magic call
+     *
+     * @return void
+     */
+    public function testClearWithCall()
+    {
+        $this->assertNull($this->Session->read('Flash.flash'));
+        $this->Flash->success('This is a test message');
+        $this->Flash->clear('success');
+        $this->assertNull($this->Session->read('Flash.flash'));
+
+        $this->Flash->config('stacking', ['enabled' => true]);
+        $this->Flash->success('It worked');
+        $this->Flash->success('It worked too');
+        $this->Flash->error('It did not work');
+        $this->Flash->success('That worked as well');
+        $this->Flash->warning('Something unexpected occurred', ['plugin' => 'MyPlugin']);
+        $this->Flash->clear('success');
+
+        $expected = [
+            2 => [
+                'message' => 'It did not work',
+                'key' => 'flash',
+                'element' => 'Flash/error',
+                'params' => []
+            ],
+            4 => [
+                'message' => 'Something unexpected occurred',
+                'key' => 'flash',
+                'element' => 'MyPlugin.Flash/warning',
+                'params' => []
+            ]
+        ];
+        $result = $this->Session->read('Flash.flash');
         $this->assertEquals($expected, $result);
     }
 }

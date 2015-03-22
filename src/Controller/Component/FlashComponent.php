@@ -133,6 +133,8 @@ class FlashComponent extends Component
 
     /**
      * Delete a message from the session
+     * If there are no remaining messages (in case of a stack), the stack
+     * array is nulled
      *
      * @param string $key The flash key where the message is stored
      * @param null|string $index The index of the message to delete
@@ -144,13 +146,43 @@ class FlashComponent extends Component
             $key = $this->config('key');
         }
 
-        $sessionKey = 'Flash.' . $key;
+        $sessionKey = $noIndexKey = 'Flash.' . $key;
         if ($index !== null) {
             $sessionKey .= '.' . $index;
         }
 
         if ($this->_session->check($sessionKey)) {
             $this->_session->delete($sessionKey);
+        }
+
+        $remaining = $this->_session->read($noIndexKey);
+        if (is_array($remaining) && empty($remaining)) {
+            $this->_session->delete($noIndexKey);
+        }
+    }
+
+    /**
+     * Delete all messages from a special type
+     *
+     * @param string $type The type of message to clear
+     * @param string $key The flash key where the message is stored
+     * @return void
+     */
+    public function clear($type, $key = '')
+    {
+        if (empty($key)) {
+            $key = $this->config('key');
+        }
+
+        $messages = $this->_session->read('Flash.' . $key);
+        if (!is_numeric(key($messages)) && strpos(end(explode('/', $messages['element'])), $type) !== false) {
+            $this->delete($key);
+        } else {
+            foreach ($messages as $index => $message) {
+                if (strpos(end(explode('/', $message['element'])), $type) !== false) {
+                    $this->delete($key, $index);
+                }
+            }
         }
     }
 

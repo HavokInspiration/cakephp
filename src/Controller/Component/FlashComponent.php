@@ -175,15 +175,29 @@ class FlashComponent extends Component
         }
 
         $messages = $this->_session->read('Flash.' . $key);
-        if (!is_numeric(key($messages)) && strpos(end(explode('/', $messages['element'])), $type) !== false) {
+        if (!is_numeric(key($messages)) && $this->_hasType($messages, $type)) {
             $this->delete($key);
         } else {
             foreach ($messages as $index => $message) {
-                if (strpos(end(explode('/', $message['element'])), $type) !== false) {
+                if ($this->_hasType($message, $type)) {
                     $this->delete($key, $index);
                 }
             }
         }
+    }
+
+    /**
+     * Check if the given $message is of type $type
+     *
+     * @param array $message Flash message array to test the type of
+     * @param string $type Type of message to test against
+     * @return bool
+     */
+    protected function _hasType(array $message, $type)
+    {
+        $elementParts = explode('/', $message['element']);
+        $messageType = end($elementParts);
+        return $messageType === $type;
     }
 
     /**

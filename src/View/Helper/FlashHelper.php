@@ -107,7 +107,7 @@ class FlashHelper extends Helper
      * @return string|void Rendered flash message or null if flash key does not exist
      *   in session.
      */
-    public function _render(array $flash)
+    protected function _render(array $flash)
     {
         return $this->_View->element($flash['element'], $flash);
     }
@@ -128,7 +128,8 @@ class FlashHelper extends Helper
             $out .= $this->_render($message);
         }
 
-        if (!empty($this->config('stackElement'))) {
+        $stackElement = $this->config('stackElement');
+        if (!empty($stackElement)) {
             $out = $this->_View->element($this->config('stackElement'), ['messages' => $out]);
         }
 

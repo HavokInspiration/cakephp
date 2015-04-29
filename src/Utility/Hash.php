@@ -195,7 +195,7 @@ class Hash
             return is_numeric($key);
         }
         if ($token === '{s}') {
-            return is_string($key);
+            return is_string($key) || is_numeric($key);
         }
         if (is_numeric($token)) {
             return ($key == $token);

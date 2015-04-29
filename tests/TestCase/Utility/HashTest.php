@@ -846,6 +846,28 @@ class HashTest extends TestCase
     }
 
     /**
+     * Test the {s} token with alphanumeric keys
+     *
+     * @return void
+     */
+    public function testExtractAlphanumericKeyTest()
+    {
+        $list = array(
+            '02000009C5560001' => array('name' => 'Mr. Alphanumeric'),
+            '2300000918020101' => array('name' => 'Mr. Numeric'),
+            '390000096AB30001' => array('name' => 'Mrs. Alphanumeric'),
+        );
+        $names = Hash::extract($list, '{s}.name');
+
+        $expected = array(
+            'Mr. Alphanumeric',
+            'Mr. Numeric',
+            'Mrs. Alphanumeric'
+        );
+        $this->assertEquals($expected, $names);
+    }
+
+    /**
      * Test the attribute presense selector.
      *
      * @return void

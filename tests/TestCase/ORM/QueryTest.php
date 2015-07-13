@@ -1797,6 +1797,166 @@ class QueryTest extends TestCase
     }
 
     /**
+     * Tests autoFields() with contain in HasMany
+     *
+     * @return void
+     */
+    public function testContainAutoFieldsHasMany()
+    {
+        $table = TableRegistry::get('authors');
+        $table->hasMany('articles');
+
+        $result = $table
+            ->find()
+            ->select(['id'])
+            ->contain(['articles'])
+            ->autoFields(true)
+            ->first();
+
+        $this->assertArrayHasKey('id', $result);
+        $this->assertArrayHasKey('name', $result);
+        $this->assertArrayHasKey('articles', $result);
+
+        $result = $table
+            ->find()
+            ->select(['id'])
+            ->contain(['articles' => function ($q) {
+                return $q->autoFields(true);
+            }])
+            ->first();
+
+        $this->assertArrayHasKey('id', $result);
+        $this->assertArrayNotHasKey('name', $result);
+        $this->assertArrayHasKey('articles', $result);
+
+        $article = $result['articles'][0];
+        $this->assertNotNull($article->id);
+        $this->assertNotNull($article->title);
+        $this->assertNotNull($article->published);
+    }
+
+    /**
+     * Tests autoFields() with contain in BelongsTo
+     *
+     * @return void
+     */
+    public function testContainAutoFieldsBelongsTo()
+    {
+        $table = TableRegistry::get('articles');
+        $table->belongsTo('authors');
+
+        $result = $table
+            ->find()
+            ->select(['id'])
+            ->contain(['authors'])
+            ->autoFields(true)
+            ->first();
+
+        $this->assertArrayHasKey('id', $result);
+        $this->assertArrayHasKey('title', $result);
+        $this->assertArrayHasKey('author', $result);
+
+        $result = $table
+            ->find()
+            ->select(['id'])
+            ->contain(['authors' => function ($q) {
+                return $q->autoFields(true);
+            }])
+            ->first();
+
+        $this->assertArrayHasKey('id', $result);
+        $this->assertArrayNotHasKey('title', $result);
+        $this->assertArrayHasKey('author', $result);
+
+        $author = $result['author'];
+        $this->assertNotNull($author->id);
+        $this->assertNotNull($author->name);
+    }
+
+    /**
+     * Tests autoFields() with contain in BelongsToMany
+     *
+     * @return void
+     */
+    public function testContainAutoFieldsBelongsToMany()
+    {
+        $table = TableRegistry::get('Articles');
+        TableRegistry::get('Tags');
+        TableRegistry::get('ArticlesTags', [
+            'table' => 'articles_tags'
+        ]);
+        $table->belongsToMany('Tags', ['strategy' => 'subquery']);
+
+        $result = $table
+            ->find()
+            ->select(['id'])
+            ->contain(['tags'])
+            ->autoFields(true)
+            ->first();
+
+        $this->assertArrayHasKey('id', $result);
+        $this->assertArrayHasKey('title', $result);
+        $this->assertArrayHasKey('body', $result);
+        $this->assertArrayHasKey('tags', $result);
+
+        $result = $table
+            ->find()
+            ->select(['id'])
+            ->contain(['tags' => function ($q) {
+                return $q->autoFields(true);
+            }])
+            ->first();
+
+        $this->assertArrayHasKey('id', $result);
+        $this->assertArrayNotHasKey('title', $result);
+        $this->assertArrayNotHasKey('body', $result);
+        $this->assertArrayHasKey('tags', $result);
+
+        $tag = $result['tags'][0];
+        $this->assertNotNull($tag->id);
+        $this->assertNotNull($tag->name);
+    }
+
+    /**
+     * Tests autoFields() with contain in BelongsTo
+     *
+     * @return void
+     */
+    public function testContainAutoFieldsHasOne()
+    {
+        $table = TableRegistry::get('Authors');
+        $table->hasOne('articles');
+
+        $result = $table
+            ->find()
+            ->select(['id'])
+            ->contain(['articles'])
+            ->autoFields(true)
+            ->first();
+
+        $this->assertArrayHasKey('id', $result);
+        $this->assertArrayHasKey('name', $result);
+        $this->assertArrayHasKey('article', $result);
+
+        $result = $table
+            ->find()
+            ->select(['id'])
+            ->contain(['articles' => function ($q) {
+                return $q->autoFields(true);
+            }])
+            ->first();
+
+        $this->assertArrayHasKey('id', $result);
+        $this->assertArrayNotHasKey('name', $result);
+        $this->assertArrayHasKey('article', $result);
+
+        $article = $result['article'];
+        $this->assertNotNull($article->id);
+        $this->assertNotNull($article->title);
+        $this->assertNotNull($article->published);
+    }
+
+    /**
      * Integration test to ensure that filtering associations with the queryBuilder
      * option works.
      *

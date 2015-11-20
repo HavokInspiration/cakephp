@@ -401,8 +401,9 @@ class FixtureManager
                 $this->_setupTable($fixture, $db, $sources, $dropTables);
             }
 
+            $fixture->dropConstraints($db);
+
             if (!$dropTables) {
-                $fixture->dropConstraints($db);
                 $fixture->truncate($db);
             }
 

@@ -271,6 +271,10 @@ class TestFixture implements FixtureInterface
             return false;
         }
 
+        if (empty($this->import) && empty($this->fields)) {
+            return true;
+        }
+
         try {
             $queries = $this->_schema->createSql($db);
             foreach ($queries as $query) {
@@ -299,6 +303,11 @@ class TestFixture implements FixtureInterface
         if (empty($this->_schema)) {
             return false;
         }
+
+        if (empty($this->import) && empty($this->fields)) {
+            return true;
+        }
+
         try {
             $sql = $this->_schema->dropSql($db);
             foreach ($sql as $stmt) {

@@ -285,7 +285,7 @@ class TestFixtureTest extends TestCase
         if (!in_array('letters', $collection->listTables())) {
             $table = new Table('letters', [
                 'id' => ['type' => 'integer'],
-                'letters' => ['type' => 'integer', 'null' => true]
+                'letter' => ['type' => 'string', 'length' => 1]
             ]);
             $table->addConstraint('primary', ['type' => 'primary', 'columns' => ['id']]);
             $sql = $table->createSql($db);
@@ -297,8 +297,17 @@ class TestFixtureTest extends TestCase
 
         $fixture = new LettersFixture();
         $fixture->init();
+        $this->assertEquals(['id', 'letter'], $fixture->schema()->columns());
 
-        $this->assertEquals(['id', 'letters'], $fixture->schema()->columns());
+        $fixture->insert($db);
+
+        $db = $this->getMock('Cake\Database\Connection', ['prepare', 'execute'], [], '', false);
+        $db->expects($this->never())
+            ->method('prepare');
+        $db->expects($this->never())
+            ->method('execute');
+        $this->assertTrue($fixture->create($db));
+        $this->assertTrue($fixture->drop($db));
     }
 
     /**

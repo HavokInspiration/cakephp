@@ -424,7 +424,6 @@ class Shell
             list($this->params, $this->args) = $this->OptionParser->parse($argv);
         } catch (ConsoleException $e) {
             $this->err('Error: ' . $e->getMessage());
-            $this->out($this->OptionParser->help($command));
 
             return false;
         }

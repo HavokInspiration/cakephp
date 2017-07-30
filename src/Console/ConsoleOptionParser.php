@@ -759,7 +759,7 @@ class ConsoleOptionParser
     {
         $rootCommand = $this->getCommand();
         $subcommands = array_keys((array)$this->subcommands());
-        $bestGuess = $this->findClosestCommand($command, $subcommands);
+        $bestGuess = $this->findClosestItem($command, $subcommands);
 
         $out = [];
 
@@ -783,21 +783,21 @@ class ConsoleOptionParser
     }
 
     /**
-     * Tries to guess the command the user originally wanted using the levenshtein algorithm.
+     * Tries to guess the item name the user originally wanted using the levenshtein algorithm.
      *
-     * @param string $command Unknown command name trying to be dispatched.
-     * @param array $subcommands List of subcommands name this shell supports.
-     * @return string|null The closest name to the command submitted by the user.
+     * @param string $needle Unknown item (either a subcommand name or an option for instance) trying to be used.
+     * @param array $haystack List of items available for the type $needle belongs to.
+     * @return string|null The closest name to the item submitted by the user.
      */
-    protected function findClosestCommand($command, $subcommands)
+    protected function findClosestItem($needle, $haystack)
     {
         $bestGuess = null;
-        foreach ($subcommands as $subcommand) {
-            $score = levenshtein($command, $subcommand);
+        foreach ($haystack as $item) {
+            $score = levenshtein($needle, $item);
 
             if (!isset($bestScore) || $score < $bestScore) {
-                $bestScore = levenshtein($command, $subcommand);
-                $bestGuess = $subcommand;
+                $bestScore = levenshtein($needle, $item);
+                $bestGuess = $item;
             }
         }
 
@@ -862,7 +862,21 @@ class ConsoleOptionParser
     protected function _parseOption($name, $params)
     {
         if (!isset($this->_options[$name])) {
-            throw new ConsoleException(sprintf('Unknown option `%s`', $name));
+            $availableOptions = array_keys($this->_options);
+            $bestGuess = $this->findClosestItem($name, $availableOptions);
+            $out = [];
+            $out[] = sprintf('Unknown option `%s`. See `bin/cake %s --help`.', $name, $this->getCommand());
+            $out[] = '';
+
+            if ($bestGuess !== null) {
+                $out[] = sprintf('Did you mean `%s` ?', $bestGuess);
+                $out[] = '';
+            }
+
+            $out[] = 'Available options are :';
+            foreach ()
+
+                throw new ConsoleException(implode("\n", $out));
         }
         $option = $this->_options[$name];
         $isBoolean = $option->isBoolean();

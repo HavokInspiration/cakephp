@@ -793,6 +793,10 @@ class ConsoleOptionParser
     {
         $bestGuess = null;
         foreach ($haystack as $item) {
+            if (preg_match('/' . $needle . '/', $item, $matches)) {
+                return $item;
+            }
+
             $score = levenshtein($needle, $item);
 
             if (!isset($bestScore) || $score < $bestScore) {

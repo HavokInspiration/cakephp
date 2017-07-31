@@ -865,7 +865,7 @@ class ConsoleOptionParser
             $availableOptions = array_keys($this->_options);
             $bestGuess = $this->findClosestItem($name, $availableOptions);
             $out = [];
-            $out[] = sprintf('Unknown option `%s`. See `bin/cake %s --help`.', $name, $this->getCommand());
+            $out[] = sprintf('Unknown option `%s`.', $name);
             $out[] = '';
 
             if ($bestGuess !== null) {
@@ -874,9 +874,12 @@ class ConsoleOptionParser
             }
 
             $out[] = 'Available options are :';
-            foreach ()
+            $out[] = '';
+            foreach ($availableOptions as $availableOption) {
+                $out[] = ' - ' . $availableOption;
+            }
 
-                throw new ConsoleException(implode("\n", $out));
+            throw new ConsoleException(implode("\n", $out));
         }
         $option = $this->_options[$name];
         $isBoolean = $option->isBoolean();
